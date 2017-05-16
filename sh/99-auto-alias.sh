@@ -21,7 +21,7 @@ _auto_alias_zsh_functions() {
 }
 
 _auto_alias_bin() {
-  for f in $(find ${DAVINCI_PATH}/bin/ -type f -o -type l); do
+  for f in $(find ${DAVINCI_CLONE}/bin/ -type f -o -type l); do
     eval "alias davinci-$(basename ${f})='$(basename ${f})'"
   done
 }

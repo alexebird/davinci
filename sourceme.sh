@@ -1,42 +1,32 @@
 #!/bin/bash
 #set -x
 
-# config env vars
-export DAVINCI_PATH="${HOME}/davinci"
-export DAVINCI_PATH_USER="${HOME}/.davinci"
-export DAVINCI_ENV_PATH="${HOME}/.davinci-env"
+_davinci_path_first_component() {
+  _davinci_path_components | head -1
+}
 
-# gpgp
-export DAVINCI_GPGP_PATH="${DAVINCI_PATH_USER}/gpg"
-export DAVINCI_GPGP_EMAIL_DOMAINS='foobar.com'
-export DAVINCI_SECRETS_PATH="${DAVINCI_HOME}/secrets"
-
-# /end config env vars
-
-export PATH="${DAVINCI_PATH}/bin:${PATH}"
-export PATH="${DAVINCI_PATH}/go/bin:${PATH}"
-
-if [[ -d "${HOME}/.davinci/bin" ]]; then
-  export PATH="${HOME}/.davinci/bin:${PATH}"
-fi
-
-export MANPATH="${DAVINCI_PATH}/man:${MANPATH}"
-export GOPATH="${DAVINCI_PATH}/go"
+_davinci_path_components() {
+  echo "${DAVINCI_PATH}" | sed -e's/:/\n/'
+}
 
 _davinci_source_bash() {
-  for f in $(find ${DAVINCI_PATH}/sh/ -type f -name '*.sh' | sort); do
+  for f in $(find ${DAVINCI_CLONE}/sh/ -type f -name '*.sh' | sort); do
     . "${f}"
   done
 }
 
 _davinci_source_user_dot_davinci() {
-  for f in $(find ${DAVINCI_PATH_USER}/sh/ -type f -name '*.sh' | sort); do
-    . "${f}"
+  for path in $(_davinci_path_components); do
+    if [[ -d "${path}/sh" ]]; then
+      for f in $(find "${path}/sh" -type f -name '*.sh' | sort); do
+        . "${f}"
+      done
+    fi
   done
 }
 
 _davinci_source_davinci_env_auto() {
-  if [[ -d "${DAVINCI_ENV_PATH}" ]] && [[ -d "${DAVINCI_ENV_PATH}/auto/" ]]; then
+  if [[ -d "${DAVINCI_ENV_PATH}" ]] && [[ -d "${DAVINCI_ENV_PATH}/auto" ]]; then
     for f in $(find ${DAVINCI_ENV_PATH}/auto/ -type f -name '*.sh' | sort); do
       . "${f}"
     done
@@ -48,6 +38,36 @@ davinci-toolme() {
   _davinci_source_user_dot_davinci
   _davinci_source_davinci_env_auto
 }
+
+# config env vars
+# ===============
+#
+
+# general paths
+export DAVINCI_CLONE="${HOME}/davinci"
+[ -z "${DAVINCI_PATH}" ] && export DAVINCI_PATH="${HOME}/.davinci"
+export DAVINCI_ENV_PATH="${HOME}/.davinci-env"
+
+# gpgp
+export DAVINCI_GPGP_PATH="$(_davinci_path_first_component)/gpg"
+export DAVINCI_GPGP_EMAIL_DOMAINS='foobar.com'
+export DAVINCI_SECRETS_PATH="${DAVINCI_HOME}/secrets"
+
+# /end config env vars
+
+
+export PATH="${DAVINCI_CLONE}/bin:${PATH}"
+export PATH="${DAVINCI_CLONE}/go/bin:${PATH}"
+
+for path in $(_davinci_path_components); do
+  if [[ -d "${path}/bin" ]]; then
+    export PATH="${path}/bin:${PATH}"
+  fi
+done
+
+export MANPATH="${DAVINCI_CLONE}/man:${MANPATH}"
+export GOPATH="${DAVINCI_CLONE}/go"
+
 
 davinci-toolme
 

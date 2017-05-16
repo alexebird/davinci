@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Checkout a git branch by substring.
+#
+# Passing '-' as the only arg checks out the previously checked out branch.
+# See git-branch-search() for substring matching behavior.
+#
+# @param substring (required) substring in a branch name
+
+readonly SUBSTRING="$1"
+readonly BS='git-branch-search'
+readonly GIT_CHECKOUT='git checkout'
+
+command -v ${BS} > /dev/null 2>&1 || \
+    { echo "${BS} is required" >&2 exit 1; }
+
+# checkout the last branch when '-' is passed
+if [[ ${SUBSTRING} ==  '-' ]]; then
+    ${GIT_CHECKOUT} -
+    exit 0
+elif [[ -z ${SUBSTRING} ]]; then
+    echo usage: git fast-checkout SUBSTRING
+    exit 1
+fi
+
+readonly BRANCH="$("${BS}" "${SUBSTRING}")"
+
+if [[ $? -eq 0 ]]; then
+    git checkout "${BRANCH}"
+    exit 0
+fi

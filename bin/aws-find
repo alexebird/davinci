@@ -1,0 +1,197 @@
+#!/bin/bash
+set -euo pipefail
+#set -x
+
+elb() {
+  local args="$*"
+}
+
+asg() {
+  local args="$*"
+  local lcs=$(
+    aws autoscaling describe-launch-configurations | jq '.LaunchConfigurations
+      | map({
+        key: .LaunchConfigurationName,
+        value: {
+          ImageId: .ImageId,
+          InstanceType: .InstanceType
+        }
+      })
+      | from_entries'
+  )
+
+  local asgs=$(
+    aws autoscaling describe-auto-scaling-groups \
+      | jq -r '.AutoScalingGroups
+                | sort_by(.CreatedTime)
+                | reverse'
+  )
+
+  local merged=$(
+    {
+      echo "${lcs}"
+      echo "${asgs}"
+    } | jq --slurp '. as [$lcs, $asgs] | $asgs | map(. + $lcs[.LaunchConfigurationName // ""])'
+  )
+
+  echo "${merged}" \
+    | jq -r 'map([
+      .AutoScalingGroupName,
+      (.Instances | length),
+      .DesiredCapacity,
+      .CreatedTime,
+      .LaunchConfigurationName,
+      .ImageId,
+      .InstanceType
+      ])
+      | .[]
+      | @csv' \
+    | tableme NAME SIZE DESIRED CREATED 'LAUNCH CONFIG' IMAGE TYPE ${args}
+}
+
+ec2() {
+  local filter=''
+  local state='running'
+  local all='false'
+  local connect='false'
+  local subnets='{}'
+  local instances
+
+  while getopts "chaf:" opt; do
+    case "${opt}" in
+      a)
+        state=''
+        all='true'
+        ;;
+      c)
+        connect='true'
+        ;;
+      f)
+        filter="${OPTARG}"
+        ;;
+      h)
+        cat <<HERE
+  -a        print more information and instances not in "running" state
+  -c        connect to the first host listed via ssh ubuntu@<private_ip>
+  -f VAL    filter for instance name containing VAL
+  -h        show this help text
+HERE
+          exit
+        ;;
+      \?)
+        echo "invalid option: -${OPTARG}" >&2
+        exit 1
+        ;;
+      :)
+        echo "option -${OPTARG} requires an argument." >&2
+        exit 1
+        ;;
+    esac
+  done
+
+  shift $(($OPTIND - 1))
+  local args="$*"
+  local headers="PUBLIC_IP PRIVATE_IP NAME STATE TYPE IMAGE LAUNCHED KEY SUBNET CIDR ID"
+
+  if [[ "${all}" == 'false' ]]; then
+    headers+=" LAUNCHED:. PUBLIC_IP:. ID:. SUBNET:. CIDR:."
+  fi
+
+  instances=$(
+    aws ec2 describe-instances \
+      | jq -r --arg state "${state}" '.Reservations
+          | map(.Instances)
+          | flatten
+          | sort_by(.LaunchTime)
+          | reverse
+          | map(select(.State.Name | contains($state)))'
+  )
+
+  if [[ "${all}" == 'true' ]]; then
+    subnets=$(aws ec2 describe-subnets | jq '.Subnets | map({key: (.SubnetId), value: {CidrBlock: .CidrBlock}}) | from_entries')
+  fi
+
+  instances=$(
+    {
+      echo "${subnets}"
+      echo "${instances}"
+    } | jq --slurp '. as [$subnets, $inst] | $inst | map(. + $subnets[.SubnetId // ""])'
+  )
+
+  local table=$(
+    echo "${instances}" \
+      | jq -r --arg state "${state}" 'map([
+          .PublicIpAddress // "",
+          .PrivateIpAddress // "",
+          ((.Tags // []) | map(select(.Key == "Name")) | .[] | .Value) // "",
+          .State.Name // "",
+          .InstanceType // "",
+          .ImageId // "",
+          .LaunchTime // "",
+          .KeyName // "",
+          .SubnetId // "",
+          .CidrBlock // "",
+          .InstanceId // ""
+        ])
+        | .[]
+        | @csv' \
+      | grep -i "${filter}" \
+      | tableme ${headers} ${args}
+  )
+
+  echo "${table}"
+
+  if [[ "${connect}" == 'true' ]]; then
+    local ip="$(echo "${table}" | grep -P '^\s*\d' | head -1 | awk '{print $1}')"
+    ssh -o 'StrictHostKeyChecking no' ubuntu@"${ip}"
+  fi
+}
+
+ami() {
+  local amis=$(
+    aws ec2 describe-images --owners=self
+  )
+  echo "${amis}" \
+    | jq -r '.Images
+      | sort_by(.CreationDate)
+      | reverse
+      | map([.ImageId, .Name, .State, .Public, .CreationDate])
+      | .[] | @csv' \
+    | tableme ID NAME STATE PUBLIC CREATED
+}
+
+snapshot() {
+  aws ec2 describe-snapshots --owner-ids=self \
+    | jq -r '.Snapshots
+      | sort_by(.StartTime)
+      | reverse
+      | map([.SnapshotId, .State, .Description, .Encrypted, .VolumeId, .StartTime])
+      | .[] | @csv' \
+    | tableme ID STATE DESC ENCRYPTED VOLUME_ID START_TIME
+}
+
+volume() {
+  aws ec2 describe-volumes \
+    | jq -r '.Volumes
+      | sort_by(.CreateTime)
+      | reverse
+      | map([.VolumeId, .SnapshotId, .AvailabilityZone, .State, .Encrypted, .Size, .CreateTime])
+      | .[] | @csv' \
+    | tableme ID SNAPSHOT_ID AZ STATE ENCRYPTED SIZE CREATED
+}
+
+main() {
+  [[ -z "${AWS_ENV}" ]] && { echo "must set aws-env" ; exit 1 ; }
+
+  local fn="${1:?must pass arg: asg, elb, ec2, ami}" ; shift
+  local other_args="$*"
+
+  if declare -F | grep -q "${fn}"; then
+    "${fn}" ${other_args}
+  else
+    echo "da-fuk? $fn"
+    exit 1
+  fi
+}
+
+main "$@"

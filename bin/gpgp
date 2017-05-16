@@ -1,0 +1,533 @@
+#!/usr/bin/env bash
+#
+# gpg Plus
+#
+# by @alexebird
+#
+
+set -euo pipefail
+#set -x
+
+_gpgp_role_path() {
+  echo "${DAVINCI_GPGP_PATH}/gpg/roles/${1:-}"
+}
+
+_gpgp_pub_key_path() {
+  echo "${DAVINCI_GPGP_PATH}/gpg/public/${1:-}"
+}
+
+_gpgp_secrets_path() {
+  echo "${DAVINCI_SECRETS_PATH}/${1:-}"
+}
+
+_gpgp_ls_roles() {
+  find "$(_gpgp_role_path)" -type f -printf '%f\n' | sort
+}
+
+_gpgp_is_role() {
+  _gpgp_ls_roles | grep -qP "^${1}$"
+}
+
+_gpgp_match_pub_key() {
+  local thing="${1}"
+  find "$(_gpgp_pub_key_path)" -type f -printf '%f\n' | grep -q "${thing}"
+}
+
+_gpgp_is_comment() {
+  local thing="${1}"
+  [[ "${thing}" == '#'* ]]
+}
+
+#
+# Recursively flatten roles into a list of the public key files.
+#
+_gpgp_flatten_role() {
+  local role="${1:?must pass role}" ; shift
+  local level="${1:?must pass level}" ; shift
+  local verbose="${1:-false}" ; shift
+
+  local padding=""
+  local one_padding="  "
+
+  for (( i=0; i<level; i++ )); do
+    padding+="${one_padding}"
+  done
+
+  if ! _gpgp_is_role "${role}"; then
+    >&2 echo "couldn't find role: ${role}"
+    exit 1
+  fi
+
+  if [[ "${verbose}" == "true" ]]; then
+    echo "${padding}role: ${role}"
+  fi
+
+  local role_path="$(_gpgp_role_path "${role}")"
+  local role_contents="$(cat "${role_path}")"
+
+  for e in ${role_contents}; do
+    if _gpgp_is_comment "${e}"; then
+      continue
+    fi
+
+    if _gpgp_is_role "${e}"; then
+      _gpgp_flatten_role "${e}" "$((level + 1))" "${verbose}"
+    elif _gpgp_match_pub_key "${e}"; then
+      if [[ "${verbose}" == "true" ]]; then
+        echo "${padding}${one_padding}${e}"
+      else
+        _gpgp_get_id_from_key_fname "${e}"
+      fi
+    else
+      >&2 echo "${e} is not a role or public key"
+    fi
+  done
+
+  if [[ "${verbose}" == "true" ]] && [[ "${level}" == "0" ]]; then
+    echo
+  fi
+}
+
+_gpgp_get_id_from_key_fname() {
+  local fname="$1"
+  echo "${fname}" | sed -n -e's/.*id:\([0-9A-Z]\+\).*/\1/p'
+}
+
+_join() {
+  local joint="${1:-}"
+  shift
+  local i=0
+  for e in "$@"; do
+    echo -n "${e}"
+    ((i++))
+    if [[ "${i}" != "$#" ]]; then
+      echo -n "${joint}"
+    else
+      echo
+    fi
+  done
+}
+
+_gpgp_recipients_list_from_role() {
+  local role="${1}"
+  local recips="$(_gpgp_flatten_role "${role}" 0 false)"
+  if [[ -n "${recips}" ]]; then
+    echo "-r $(_join ' -r ' ${recips})"
+  else
+    return 1
+  fi
+}
+
+_gpgp_recipients_list_from_roles() {
+  local list=''
+  local recips
+
+  for role in "$@"; do
+    recips="$(_gpgp_recipients_list_from_role "${role}")"
+
+    if [[ "$?" != "0" ]]; then
+      return 1
+    fi
+
+    if [[ -z "${list}" ]]; then
+      list="${recips}"
+    else
+      list="${list} ${recips}"
+    fi
+  done
+
+  echo "${list}"
+}
+
+_gpgp_validate_roles() {
+  local roles="$@"
+  for role in "$@"; do
+    if ! _gpgp_is_role "${role}"; then
+      >&2 echo "couldn't find role: ${role}"
+      exit 1
+    fi
+  done
+}
+
+_gpgp_cmd_recips() {
+  local roles="$@"
+  local recips
+  recips="$(_gpgp_recipients_list_from_roles ${roles})"
+  if [[ "$?" != "0" ]]; then
+    return 1
+  else
+    echo "${recips}"
+  fi
+}
+
+_gpgp_cmd_ls() {
+  local verbose="$1" ; shift
+  local roles="$@"
+
+  for role in "$@"; do
+    _gpgp_flatten_role "${role}" 0 "${verbose}"
+  done
+}
+
+_gpgp_cmd_import() {
+  local dry_run='false'
+
+  while getopts "hn" opt; do
+    case "${opt}" in
+      n)
+        dry_run='true'
+        echo "dry run!"
+        echo
+        ;;
+      h)
+        cat <<HERE
+  -n    dry run
+  -h    show this help text
+HERE
+          exit
+        ;;
+      \?)
+        echo "invalid option: -${OPTARG}" >&2
+        exit 1
+        ;;
+      :)
+        echo "option -${OPTARG} requires an argument." >&2
+        exit 1
+        ;;
+    esac
+  done
+
+  # these are the key ids we want to end up having imported at the end of the process.
+  local desired_keys="$(_gpgp_cmd_ls false $(_gpgp_ls_roles) | sort | uniq)"
+
+  # get currently imported public keys for the owner's domains
+  local current_keys=$(
+    gpg --list-keys \
+      | grep -B1 -P "${DAVINCI_GPGP_EMAIL_DOMAINS}" \
+      | grep pub \
+      | sed -n -e's;^pub.\+\/\(.\+\) .\+$;\1;p' \
+      | sort \
+      | uniq
+  )
+
+  # we will import everything in desired_keys.
+  # we will --delete-key on everything that is in only current_keys.
+
+  # take the set difference to get the keys only in current_keys.
+  local delete_keys=$(
+    comm -1 -3 \
+      <(echo -e "${desired_keys}" | sed -e's/ /\n/g' | sort) \
+      <(echo -e "${current_keys}" | sed -e's/ /\n/g' | sort)
+  )
+
+  echo desired: ${desired_keys}
+  echo current: ${current_keys}
+  echo delete:  ${delete_keys}
+  echo
+
+  local desired_regex="$(_join '|' ${desired_keys})"
+  local cmd
+
+  if [[ -n "${desired_regex}" ]]; then
+    for f in $(find "$(_gpgp_pub_key_path)" -type f -name '*.pub' | grep -P "${desired_regex}") ; do
+      cmd="gpg --import ${f}"
+      echo "${cmd}"
+      if [[ "${dry_run}" != "true" ]]; then
+        ${cmd}
+      fi
+      echo
+    done
+  fi
+
+  if [[ -s "${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt" ]]; then
+    gpg --import-ownertrust < "${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt"
+  fi
+
+  for f in ${delete_keys} ; do
+    cmd="gpg --batch --yes --delete-key ${f}"
+    echo "${cmd}"
+    if [[ "${dry_run}" != "true" ]]; then
+      ${cmd}
+    fi
+    echo
+  done
+}
+
+_gpgp_cmd_encrypt() {
+  local gpg_opts=''
+  local rm_orig='false'
+
+  while getopts "ho:r" opt; do
+    case "${opt}" in
+      r)
+        rm_orig="true"
+        ;;
+      o)
+        gpg_opts="${OPTARG}"
+        ;;
+      h)
+        cat <<HERE
+  -o    more options to be passed directly to gpg
+  -r    rm the original unencrypted file
+  -h    show this help text
+HERE
+          exit
+        ;;
+      \?)
+        echo "invalid option: -${OPTARG}" >&2
+        exit 1
+        ;;
+      :)
+        echo "option -${OPTARG} requires an argument." >&2
+        exit 1
+        ;;
+    esac
+  done
+
+  shift $(($OPTIND - 1))
+
+  # convert roles to an array
+  local roles=( $@ )
+  # convention: the last arg is the file to encrypt
+  local file="${roles[${#roles[@]}-1]}"
+
+  if [[ -n "${gpg_opts}" ]]; then
+    gpg_opts="${gpg_opts} "
+  fi
+
+  # if a file is passed as the last arg, encrypt it.
+  if [[ -f "${file}" ]]; then
+    # remove the file from the list of args so we are only left with a list of roles
+    unset 'roles[${#roles[@]}-1]'
+    outf=''
+    _gpgp_validate_roles ${roles}
+    gpg ${gpg_opts}-e "$(_gpgp_cmd_recips ${roles})" "${file}"
+
+    if [[ "${rm_orig}" == "true" ]]; then
+      rm -v "${file}"
+    fi
+
+  # if no existing file is passed as the last arg, read from stdin, ascii armor, write to stdout.
+  else
+    # read from stdin, write to stdout
+    _gpgp_validate_roles ${roles}
+    cat - | gpg ${gpg_opts}-a -e "$(_gpgp_cmd_recips ${roles})" -o-
+  fi
+}
+
+_gpgp_secrets_find_role_file() {
+  local dir="${1:?must pass dir}" ; shift
+  local orig_dir="${dir}"
+  local role_file
+
+  while true; do
+    role_file="${dir}/gpgp-role"
+
+    if [[ -f "${role_file}" ]]; then
+      if [[ "$(cat "${role_file}" | wc -l )" != "1" ]] || ! [[ -s "${role_file}" ]]; then
+        >&2 echo "role file ${role_file} must contain exactly one role."
+        echo ""
+        return 1
+      fi
+
+      echo "${role_file}"
+      return 0
+
+    # if we can't move upwards anymore
+    elif [[ "${DAVINCI_SECRETS_PATH%/}" == "${dir%/}" ]]; then
+      echo ""
+      return 1
+
+    else
+      dir="$(dirname "${dir}")"
+    fi
+  done
+}
+
+# The assumption is that the secrets dir is versioned, so this can do potentially
+# destructive actions.
+_gpgp_secrets_reencrypt_dir() {
+  local dir="${1:?must pass dir}" ; shift
+  local dry_run="${1:-false}" ; shift
+
+  local role_file="$(_gpgp_secrets_find_role_file "${dir}")"
+  # if there's no role file, check if dir only has dirs in it, meaning
+  # there are no secrets in dir to protect from not being encrypted.
+  if [[ -z "${role_file}" ]]; then
+    # how many regular files in are in dir?
+    if [[ "$(find "${dir}" -maxdepth 1 -name '.git' -prune -o -type f -print | wc -l)" == "0" ]]; then
+      # if there are none, don't both to do anything else because the dir has no secrets to encrypt
+      :
+      return 0
+    else
+      >&2 echo "role file not found for directory ${dir} or in any parent dir."
+      return 1
+    fi
+  fi
+
+  local role="$(cat "${role_file}")"
+  if [[ -z "${role}" ]]; then
+    return 1
+  fi
+
+  _gpgp_validate_roles ${role}
+  echo "dir:  ${dir}"
+  echo "role: ${role} (${role_file})"
+
+  # if it ends with gpg, re-encrypt.
+  for secret in $(find "${dir}" -maxdepth 1 -type f -name '*.gpg') ; do
+    echo "+/- ${secret}"
+    if [[ "${dry_run}" == "false" ]]; then
+      local tmp_secret="${secret/%gpg/__new.gpg}"
+      rm -f "${tmp_secret}"
+      # leave no unencrypted secret on disk
+      cat "${secret}" \
+        | gpg -d -o- \
+        | gpg -e $(gpgp recips ${role}) -o"${tmp_secret}" \
+        && mv "${tmp_secret}" "${secret}"
+    fi
+  done
+
+  # if it doesn't end with gpg, just encrypt and delete original.
+  for secret in $(find "${dir}" -maxdepth 1 -name '.git' -prune -o \( -type f -a -not -name '*.gpg' -a -not -name 'gpgp-role' \) -print) ; do
+    echo "+   ${secret}"
+    if [[ "${dry_run}" == "false" ]]; then
+      gpgp -o '--batch --yes' "${role}" "${secret}"
+      rm -v "${secret}"
+    fi
+  done
+}
+
+_gpgp_cmd_reencrypt() {
+  local dry_run='false'
+
+  while getopts "hn" opt; do
+    case "${opt}" in
+      n)
+        dry_run='true'
+        echo "dry run!"
+        echo
+        ;;
+      h)
+        cat <<HERE
+  -n    dry run
+  -h    show this help text
+HERE
+          exit
+        ;;
+      \?)
+        echo "invalid option: -${OPTARG}" >&2
+        exit 1
+        ;;
+      :)
+        echo "option -${OPTARG} requires an argument." >&2
+        exit 1
+        ;;
+    esac
+  done
+
+  # try to do a dry run first
+  echo "checking for roles"
+  echo "=================="
+  if _gpgp_cmd_reencrypt_dirs 'true' ; then
+    echo "check passed. ready to encrypt."
+    echo
+
+    if [[ "${dry_run}" == 'false' ]]; then
+      echo "re-encrypting secrets"
+      echo "====================="
+      _gpgp_cmd_reencrypt_dirs 'false'
+    fi
+  else
+    echo "check failed. no encryption was done."
+  fi
+}
+
+_gpgp_cmd_reencrypt_dirs() {
+  local dry_run="$1"
+  for dir in $(find "${DAVINCI_SECRETS_PATH}" -name '.git' -prune -o -type d -print) ; do
+    _gpgp_secrets_reencrypt_dir "${dir}" "${dry_run}" || return 1
+    echo
+  done
+}
+
+#_gpgp_roles_completer() {
+  #_gpgp_ls_roles
+  #echo
+#}
+
+#complete -F _gpgp_roles_completer _gpgp_recipients_list
+
+_gpgp_usage() {
+  cat <<HERE
+gpgp ROLES...
+
+Reads from STDIN, writes to STDOUT in ascii armor.
+
+
+gpgp ROLES... FILE
+
+Encrypts FILE without ascii armor in the same dir.
+
+
+gpgp SUBCMD
+
+Subcommands:
+
+(run with -h for more)
+
+recips      Prints a \`-r FOOBAR -r BAR...\` string for use with gpg.
+ls          Prints the role heirarchy for all roles.
+ls ROLE...  Prints the role heirarchy for the specified roles.
+import      Imports the public keys at DAVINCI_GPGP_PATH, and the ownertrust.txt file.
+reencrypt   Reencrypts the secrets at DAVINCI_SECRETS_PATH.
+HERE
+}
+
+main() {
+  local cmd="${1:-}"
+
+  if [[ -z "${cmd}" ]]; then
+    _gpgp_usage
+    exit 1
+  fi
+
+  case "${cmd}" in
+    recips)
+      shift
+      local roles="$@"
+      _gpgp_validate_roles ${roles}
+      _gpgp_cmd_recips ${roles}
+      ;;
+
+    ls)
+      shift
+      local roles="$@"
+      _gpgp_validate_roles ${roles}
+
+      if [[ -z "${roles}" ]]; then
+        roles="$(_gpgp_ls_roles)"
+      fi
+
+      _gpgp_cmd_ls true ${roles}
+      ;;
+
+    import)
+      shift
+      _gpgp_cmd_import "$@"
+      ;;
+
+    reencrypt)
+      shift
+      _gpgp_cmd_reencrypt "$@"
+      ;;
+
+    # default is to encrypt a file or stdin
+    *)
+      _gpgp_cmd_encrypt "$@"
+      ;;
+
+  esac
+}
+
+main "$@"

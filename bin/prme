@@ -1,0 +1,26 @@
+#!/bin/bash
+set -euo pipefail
+
+org="davinci"
+repo="$(basename "$(git rev-parse --show-toplevel)")"
+title="${1:?must set PR title}"
+body="${2:-${title}}"
+branch="$(git branch-search)"
+
+function _url_encode() {
+  python -c "import urllib, sys; print urllib.quote(sys.argv[1])" "$1"
+}
+
+if [[ "${body}" == "@infra" ]]; then
+  body='@alexebird'
+fi
+
+title="$(_url_encode "${title}")"
+body="$(_url_encode "${body}")"
+
+#URI.encode("http://github.com/ConsultingMD/#{repo}/compare/master...#{branch}?title=#{sanitize(title)}&body=#{sanitize(body)}")
+
+url="http://github.com/${org}/${repo}/compare/master...${branch}?title=${title}&body=${body}"
+
+#echo "${url}"
+open "${url}"

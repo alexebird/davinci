@@ -1,0 +1,80 @@
+#!/bin/bash
+set -euo pipefail
+#set -x
+
+usage() {
+  cat <<HERE
+Usage: nplus OPTS
+
+-j    json output
+-h    help me
+HERE
+
+  exit 1
+}
+
+one_job() {
+  local job_id="${1:?must pass a job name/id}" ; shift
+  curl -L -s "${NOMAD_ADDR}/v1/job/${job_id}/allocations" \
+    | jq -r 'map(.ID)[]' \
+    | parallel --keep-order --colsep ' ' "curl -L -s \"${NOMAD_ADDR}/v1/allocation/{1}\""
+}
+
+all_jobs() {
+  curl -L -s "${NOMAD_ADDR}/v1/jobs" \
+    | jq -r 'map(.ID)[]' \
+    | parallel --keep-order "nplus -j {1}"
+}
+
+transform_jobs_for_table() (set -euo pipefail
+  cat - \
+    | jq --slurp '. | sort_by(.CreateTime) | reverse' \
+    | jq -r -f "${DAVINCI_HOME}/davinci/jq/nplus/alloc-table.jq"
+    #| jq '.'
+)
+
+job_table() (set -euo pipefail
+  local json="$1"
+
+  if [[ "${json}" == 'true' ]]; then
+    cat -
+  else
+    cat - \
+      | transform_jobs_for_table \
+      | tableme JOB GROUP TASK STATE TYPE IP NODE EVAL CREATED
+  fi
+)
+
+main() {
+  [[ -z "${NOMAD_ADDR}" ]] && { echo 'must run nomad-env' ; exit 1 ; }
+
+  local json='false'
+
+  while getopts "jh" opt; do
+    case "${opt}" in
+      j)
+        json='true'
+        ;;
+      h)
+        usage
+        ;;
+      \?)
+        usage
+        ;;
+      :)
+        usage
+        ;;
+    esac
+  done
+
+  shift $(($OPTIND - 1))
+  local args="$*"
+
+  if [[ "$#" -eq 0 ]]; then
+    all_jobs | job_table "${json}"
+  else
+    one_job "$1" | job_table "${json}"
+  fi
+}
+
+main "$@"

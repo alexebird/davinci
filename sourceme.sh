@@ -49,7 +49,7 @@ export DAVINCI_CLONE="${HOME}/davinci"
 export DAVINCI_ENV_PATH="${HOME}/.davinci-env"
 
 # gpgp
-export DAVINCI_GPGP_PATH="$(_davinci_path_first_component)/gpg"
+[ -z "${DAVINCI_GPGP_PATH}" ] && export DAVINCI_GPGP_PATH="$(_davinci_path_first_component)"
 export DAVINCI_GPGP_EMAIL_DOMAINS='foobar.com'
 export DAVINCI_SECRETS_PATH="${DAVINCI_HOME}/secrets"
 

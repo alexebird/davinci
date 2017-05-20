@@ -304,6 +304,7 @@ HERE
     gpg ${gpg_opts}-e "$(_gpgp_cmd_recips ${roles})" "${file}"
 
     if [[ "${rm_orig}" == "true" ]]; then
+      echo "encrypted '${file}'"
       rm -v "${file}"
     fi
 

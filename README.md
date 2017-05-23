@@ -20,36 +20,85 @@ cd davinci
 
 ### Bash/Zsh
 
-Put this in **~/.bashrc** or **~/.zshrc**:
+This exhastive list of environment variables are used to configure
+Davinci. These go at the end of `~/.bashrc` or `~/.zshrc`, and must
+be set before sourcing `sourceme.sh`:
+
+
+export DAVINCI_GPGP_PATH="${DAVINCI_HOME}/infrared"
+export DAVINCI_GPGP_EMAIL_DOMAINS='stridehealth.com'
 
 ```bash
-export DAVINCI_HOME="<where ever you clone your team's repos to>"
+# DAVINCI_CLONE
+# - defaults to "${HOME}/davinci"
+# - This is where Davinci is cloned to.
+export DAVINCI_CLONE="${HOME}/davinci"
+```
 
-# must set DAVINCI_OPTS before sourcing sourceme.sh
-# see `man davinci-davinci` for all options.
+```bash
+# DAVINCI_HOME (required)
+# - The location where all your code repos are cloned to.
+# - Used internally by davinci, but also provided for convenience
+#   as a way to refence other codebases.
+export DAVINCI_HOME="${HOME}/cool-co"
+```
+
+```bash
+# DAVINCI_PATH
+# - defaults to "${HOME}/.davinci"
+# - Paths which davinci should look for additional bin/ and sh/ directories.
+# - In this example, the '${HOME}/.davinci' component is a git repo with personal
+#   tools, and the '${DAVINCI_HOME}/infra/davinci' component is a git repo with
+#   team tooling.
+export DAVINCI_PATH="${HOME}/.davinci:${DAVINCI_HOME}/infra/davinci"
+```
+
+```bash
+# DAVINCI_ENV_PATH (required)
+# - defaults to "${HOME}/.davinci-env"
+# - Path where virtual-env tooling, such as aws-env, environments live.
+# - Should not be a git repo unless any secrets are encrypted.
+export DAVINCI_ENV_PATH="${HOME}/.cool-co-env"
+```
+
+```bash
+# DAVINCI_OPTS
+# - defaults to ''
+# - options:
+#   - prompt - allow davinci to modify the shell prompt.
 export DAVINCI_OPTS='prompt'
+```
 
-# this is the path to where you store your gpg public keys.
-export DAVINCI_GPGP_PATH="${DAVINCI_HOME}/my-teams-gpg-pub-keys"
-# this is your company's domain or domains ('|' separated) that are on gpg pub keys
+```bash
+# DAVINCI_GPGP_PATH
+# - The path where gpgp should look.
+# - Inside DAVINCI_GPGP_PATH, the expected structure is:
+# - "${DAVINCI_GPGP_PATH}"
+#   - gpg/
+#     - public/    # public gpg keys
+#     - roles/     # gpgp roles
+export DAVINCI_GPGP_PATH="${DAVINCI_HOME}/infra/"
+```
+
+```bash
+# DAVINCI_GPGP_EMAIL_DOMAINS
+# - You or your company's domain or domains ('|' separated) that are associated with gpg public keys.
 export DAVINCI_GPGP_EMAIL_DOMAINS='cool-co.com'
+```
 
+Finally, source davinci.
+
+```bash
 . "${HOME}/davinci/sourceme.sh"
 ```
 
-### Ruby Setup
-**note: this is only required for some older tools in bin/**
+Here's a minimal `.bashrc` example:
 
 ```bash
-# install rvm
-gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-\curl -sSL https://get.rvm.io | bash -s stable
+...
 
-# get a terminal
-rvm install ruby-2.3
-rvm use ruby-2.3.3@global --default
-gem install bundler
-bundle
+
+. "${DAVINCI_CLONE}/sourceme.sh"
 ```
 
 Discoverability
@@ -58,21 +107,31 @@ Discoverability
 The commands and sourced-functions in DaVinci are automatically prefixed with `davinci-`.
 
 ```bash
-$ man-davinci-davinci
 $ davinci-<tab><tab>
 ```
 
 aws-env
 -------
 
-This tooling generally relies on your AWS creds being provide via environment
-variables. The command `aws-env` controls this. It is also recommended to setup
-your prompt to show the current `aws-env`. `aws-env` operates by convention.
-For an env called `dev`, it looks for a file named `~/.aws/dev.sh`, with these
-env vars being exported:
+Example:
 
 ```bash
-$ cat ~/.aws/dev.sh
+# set
+foo@bar$ aws-env dev
+# if enabled, the davinci prompt detects aws-env and shows it as (a:dev)
+# print/get the aws-env
+foo@bar(a:dev)$ aws-env
+dev
+```
+
+This tooling generally relies on your AWS creds being provided via environment
+variables. The command `aws-env` controls this. It is also recommended to setup
+your prompt to show the current `aws-env`. `aws-env` operates by convention.
+For an env called `dev`, it looks for a file named `~/.davinci-env/aws/dev.sh`,
+with these env vars being exported:
+
+```bash
+$ cat ~/.davinci-env/aws/dev.sh
 # iam user: larry
 export AWS_DEFAULT_REGION='us-east-1'
 export AWS_REGION="${AWS_DEFAULT_REGION}"
@@ -82,7 +141,7 @@ export AWS_SECRET_ACCESS_KEY='flubberflabber'
 
 The tool `davinci-aws-make-creds-file ENV` looks in `~/Downloads` for the most recent
 file named `credentials*.csv` (which is downloaded from the IAM console), and generates
-the appropriate `ENV.sh` file for placement into `~/.aws/`.
+the appropriate `ENV.sh` file for placement into `~/.davinci-env/aws/`.
 
 Safety Prompt
 -------------
@@ -93,7 +152,7 @@ The safety prompt changes your prompt from this:
 foo@bar:/path$
 ```
 
-to:
+to something like this:
 
 ```
 foo@bar:/path (a:dev)(n:dev)(v:dev)$

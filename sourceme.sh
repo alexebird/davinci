@@ -44,16 +44,20 @@ davinci-toolme() {
 #
 
 # general paths
-export DAVINCI_CLONE="${HOME}/davinci"
-[ -z "${DAVINCI_PATH}" ] && export DAVINCI_PATH="${HOME}/.davinci"
-export DAVINCI_ENV_PATH="${HOME}/.davinci-env"
+[ -z "${DAVINCI_CLONE}" ]    && export DAVINCI_CLONE="${HOME}/davinci"
+[ -z "${DAVINCI_HOME}" ]     && { echo "must set DAVINCI_HOME"; return 1 ; }
+[ -z "${DAVINCI_PATH}" ]     && export DAVINCI_PATH="${HOME}/.davinci"
+[ -z "${DAVINCI_ENV_PATH}" ] && export DAVINCI_ENV_PATH="${HOME}/.davinci-env"
+
+[ -z "${DAVINCI_OPTS}" ] && export DAVINCI_OPTS=''
 
 # gpgp
-[ -z "${DAVINCI_GPGP_PATH}" ] && export DAVINCI_GPGP_PATH="$(_davinci_path_first_component)"
-export DAVINCI_GPGP_EMAIL_DOMAINS='foobar.com'
-export DAVINCI_SECRETS_PATH="${DAVINCI_HOME}/secrets"
+[ -z "${DAVINCI_GPGP_PATH}" ]          && export DAVINCI_GPGP_PATH="$(_davinci_path_first_component)"
+[ -z "${DAVINCI_GPGP_EMAIL_DOMAINS}" ] && { echo "must set DAVINCI_GPGP_EMAIL_DOMAINS"; return 1 ; }
+[ -z "${DAVINCI_GPGP_SECRETS_PATH}" ]  && export DAVINCI_GPGP_SECRETS_PATH="${DAVINCI_HOME}/secrets"
 
 # /end config env vars
+# ====================
 
 
 export PATH="${DAVINCI_CLONE}/bin:${PATH}"

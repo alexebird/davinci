@@ -17,7 +17,7 @@ _gpgp_pub_key_path() {
 }
 
 _gpgp_secrets_path() {
-  echo "${DAVINCI_SECRETS_PATH}/${1:-}"
+  echo "${DAVINCI_GPGP_SECRETS_PATH}/${1:-}"
 }
 
 _gpgp_ls_roles() {
@@ -335,7 +335,7 @@ _gpgp_secrets_find_role_file() {
       return 0
 
     # if we can't move upwards anymore
-    elif [[ "${DAVINCI_SECRETS_PATH%/}" == "${dir%/}" ]]; then
+    elif [[ "${DAVINCI_GPGP_SECRETS_PATH%/}" == "${dir%/}" ]]; then
       echo ""
       return 1
 
@@ -446,7 +446,7 @@ HERE
 
 _gpgp_cmd_reencrypt_dirs() {
   local dry_run="$1"
-  for dir in $(find "${DAVINCI_SECRETS_PATH}" -name '.git' -prune -o -type d -print) ; do
+  for dir in $(find "${DAVINCI_GPGP_SECRETS_PATH}" -name '.git' -prune -o -type d -print) ; do
     _gpgp_secrets_reencrypt_dir "${dir}" "${dry_run}" || return 1
     echo
   done
@@ -481,7 +481,7 @@ recips      Prints a \`-r FOOBAR -r BAR...\` string for use with gpg.
 ls          Prints the role heirarchy for all roles.
 ls ROLE...  Prints the role heirarchy for the specified roles.
 import      Imports the public keys at DAVINCI_GPGP_PATH, and the ownertrust.txt file.
-reencrypt   Reencrypts the secrets at DAVINCI_SECRETS_PATH.
+reencrypt   Reencrypts the secrets at DAVINCI_GPGP_SECRETS_PATH.
 HERE
 }
 

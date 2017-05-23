@@ -1,7 +1,7 @@
 #!/bin/bash
 
 _auto_alias_bash_functions() {
-  for cmd in $(declare -F | grep davinci- | sed -e's/declare -f davinci-//'); do
+  for cmd in $(declare -F | grep 'declare -f davinci-' | sed -e's/declare -f davinci-//'); do
     # add non-'davinci-'-prefixed alias for functions which start with "davinci-"
     eval "alias ${cmd}='davinci-${cmd}'"
 

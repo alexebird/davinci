@@ -139,6 +139,7 @@ _ovpn_tb_ps1() {
 }
 
 _ovpn_native_ps1() {
+  # convert from line-separated to comma-separated
   local vpns="$(davinci-ovpn-native-ls | awk '{ printf "%s", NR==1?$0:","$0 }')"
 
   if [[ -n "${vpns}" ]]; then
@@ -159,4 +160,29 @@ _git_color_ps1() {
   else
     echo "${COLOR_RED}$(__git_ps1)${COLOR_RESET}"
   fi
+}
+
+_davinci_env_ps1() {
+  local new_ps1
+  local parens_color="${COLOR_LIGHT_GREEN}"
+  local env_color="${COLOR_LIGHT_GREEN}"
+
+  # empty prompt section if env isnt set
+  if [[ -z "${DAVINCI_ENV}" ]] ; then
+    echo
+    return 0
+  fi
+
+  #new_ps1="${env_color}${DAVINCI_ENV}:"
+  new_ps1="${env_color}${DAVINCI_ENV}"
+
+  if [[ -n "${AWS_ENV}" ]] ; then
+     new_ps1="${new_ps1}${COLOR_YELLOW}a"
+  fi
+
+  if davinci-ovpn-native-ls | grep -q "${DAVINCI_ENV}" ; then
+     new_ps1="${new_ps1}${COLOR_PURPLE}v"
+  fi
+
+  echo "${parens_color}(${new_ps1}${parens_color})${COLOR_RESET}"
 }

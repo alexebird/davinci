@@ -24,10 +24,6 @@ This exhastive list of environment variables are used to configure
 Davinci. These go at the end of `~/.bashrc` or `~/.zshrc`, and must
 be set before sourcing `sourceme.sh`:
 
-
-export DAVINCI_GPGP_PATH="${DAVINCI_HOME}/infrared"
-export DAVINCI_GPGP_EMAIL_DOMAINS='stridehealth.com'
-
 ```bash
 # DAVINCI_CLONE
 # - defaults to "${HOME}/davinci"

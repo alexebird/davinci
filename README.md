@@ -93,8 +93,12 @@ Here's a minimal `.bashrc` example:
 ```bash
 ...
 
+export DAVINCI_HOME="${HOME}/cool-co"
+export DAVINCI_OPTS='prompt'
+export DAVINCI_GPGP_EMAIL_DOMAINS='cool-co.com'
 
-. "${DAVINCI_CLONE}/sourceme.sh"
+. "${HOME}/davinci/sourceme.sh"
+
 ```
 
 Discoverability

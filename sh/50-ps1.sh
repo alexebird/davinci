@@ -166,6 +166,7 @@ _davinci_env_ps1() {
   local new_ps1
   local parens_color="${COLOR_LIGHT_GREEN}"
   local env_color="${COLOR_LIGHT_GREEN}"
+  local sensitive_env_color="${COLOR_RED_HL}"
 
   # empty prompt section if env isnt set
   if [[ -z "${DAVINCI_ENV}" ]] ; then
@@ -173,8 +174,11 @@ _davinci_env_ps1() {
     return 0
   fi
 
-  #new_ps1="${env_color}${DAVINCI_ENV}:"
-  new_ps1="${env_color}${DAVINCI_ENV}"
+  if [[ "${DAVINCI_ENV}" == "prod" ]] ; then
+    new_ps1="${sensitive_env_color}${DAVINCI_ENV}"
+  else
+    new_ps1="${env_color}${DAVINCI_ENV}"
+  fi
 
   if [[ -n "${AWS_ENV}" ]] ; then
      new_ps1="${new_ps1}${COLOR_YELLOW}a"

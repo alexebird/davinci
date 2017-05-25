@@ -2,7 +2,7 @@
 
 _ovpn_connect() {
   local env="$1"
-  local conf="${DAVINCI_ENV_PATH}/ovpn/${env}.ovpn"
+  local conf="${DAVINCI_ENV_PATH}/${env}/config.ovpn"
 
   if [[ -z "$(_ovpn_pid ${env})" ]]; then
     sudo openvpn --config "${conf}" --daemon
@@ -30,12 +30,11 @@ davinci-ovpn-native-ls() {
   ps -ef \
     | grep 'openvpn --config' \
     | grep -v grep \
-    | grep --colour=never -oP -- "(?<=${DAVINCI_ENV_PATH}/ovpn/)(\w+)+(?=\.ovpn)" \
+    | grep --colour=never -oP -- "(?<=${DAVINCI_ENV_PATH}/${DAVINCI_ENV}/)(\w+)+(?=\.ovpn)" \
     | sort
 }
 
 davinci-ovpn() {
-  #local env="${1:?must pass env}" ; shift
   local cmd="${1:?must pass up/down/reup}" ; shift
   local env="${DAVINCI_ENV:?must set davinci-env}"
   _ovpn_cmd_"${cmd}" "${env}"

@@ -11,6 +11,7 @@ HERE
 }
 
 davinci-aws-env() {
+  echo "aws-env is deprecated as of May 25 2017"
   _davinci_help_helper "$@" && return 0
   local new_env="${1:-}"
 

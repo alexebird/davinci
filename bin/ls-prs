@@ -7,14 +7,20 @@ require 'action_view'
 
 include ActionView::Helpers::DateHelper
 
+def org_name
+  ENV['GITHUB_ORG_NAME']
+end
+
 def clean_time(time)
   time_ago_in_words(time)
 end
 
 def get_prs(repo)
-  @client.pull_requests("davinci/#{repo}", state: 'open').map do |pr|
+  @client.pull_requests("#{org_name}/#{repo}", state: 'open').map do |pr|
     [repo, time_ago_in_words(pr[:created_at]), pr[:head][:ref], pr[:user][:login], pr[:title], pr[:html_url], pr[:created_at]]
   end
+rescue Octokit::NotFound
+  nil
 end
 
 def tableme(headings, rows)
@@ -45,7 +51,7 @@ repos  = ARGV
 
 repos = repos.map do |repo|
   get_prs(repo)
-end.flatten(1).sort_by do |repo,_,_,username,title,html_url,created_at|
+end.compact.flatten(1).sort_by do |repo,_,_,username,title,html_url,created_at|
   [created_at, repo, username.downcase, title.downcase]
 end.reverse.map do |x|
   x.take(x.size-1)

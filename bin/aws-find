@@ -4,6 +4,9 @@ set -euo pipefail
 
 elb() {
   local args="$*"
+  aws elb describe-load-balancers \
+    | jq -r -f "${DAVINCI_CLONE}/jq/aws-find/elb.jq" \
+    | tableme NAME SCHEME INSTANCES LISTENERS CREATED
 }
 
 asg() {

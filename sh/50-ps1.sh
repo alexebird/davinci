@@ -167,10 +167,16 @@ _davinci_env_ps1() {
   local parens_color="${COLOR_LIGHT_GREEN}"
   local env_color="${COLOR_LIGHT_GREEN}"
   local sensitive_env_color="${COLOR_RED_HL}"
+  local vpn_color="${COLOR_PURPLE}"
+  local aws_color="${COLOR_YELLOW}"
 
   # empty prompt section if env isnt set
   if [[ -z "${DAVINCI_ENV}" ]] ; then
-    echo
+    if [[ "$(ps -ef | grep 'openvpn --config' | wc -l)" != "0" ]]; then
+      echo "${parens_color}(${vpn_color}v${parens_color})${COLOR_RESET}"
+    else
+      echo
+    fi
     return 0
   fi
 
@@ -181,11 +187,11 @@ _davinci_env_ps1() {
   fi
 
   if [[ -n "${AWS_ENV}" ]] ; then
-     new_ps1="${new_ps1}${COLOR_YELLOW}a"
+     new_ps1="${new_ps1}${aws_color}a"
   fi
 
   if davinci-ovpn-native-ls | grep -q "${DAVINCI_ENV}" ; then
-     new_ps1="${new_ps1}${COLOR_PURPLE}v"
+     new_ps1="${new_ps1}${vpn_color}v"
   fi
 
   echo "${parens_color}(${new_ps1}${parens_color})${COLOR_RESET}"

@@ -30,7 +30,7 @@ davinci-ovpn-native-ls() {
   ps -ef \
     | grep 'openvpn --config' \
     | grep -v grep \
-    | grep --colour=never -oP -- "(?<=${DAVINCI_ENV_PATH}/${DAVINCI_ENV}/)(\w+)+(?=\.ovpn)" \
+    | grep --colour=never -oP -- "(?<=${DAVINCI_ENV_PATH}/)${DAVINCI_ENV}(?=/config\.ovpn)" \
     | sort
 }
 

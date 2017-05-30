@@ -3,7 +3,7 @@
 # from: https://www.topbug.net/blog/2013/04/14/install-and-use-gnu-command-line-tools-in-mac-os-x/
 
 
-cat <<HERE
+cat <<\HERE
 add this to your .bashrc/.zshrc, if it doesn't already exist, before the DAVINCI_* env vars:
 
   export PATH="$(brew --prefix coreutils)/libexec/gnubin:/usr/local/bin:$PATH"

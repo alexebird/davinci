@@ -73,7 +73,7 @@ export DAVINCI_OPTS='prompt'
 #   - gpg/
 #     - public/    # public gpg keys
 #     - roles/     # gpgp roles
-export DAVINCI_GPGP_PATH="${DAVINCI_HOME}/infra/"
+export DAVINCI_GPGP_PATH="${DAVINCI_HOME}/infra"
 ```
 
 ```bash

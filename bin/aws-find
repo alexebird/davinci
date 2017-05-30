@@ -101,13 +101,8 @@ HERE
   fi
 
   instances=$(
-    aws ec2 describe-instances \
-      | jq -r --arg state "${state}" '.Reservations
-          | map(.Instances)
-          | flatten
-          | sort_by(.LaunchTime)
-          | reverse
-          | map(select(.State.Name | contains($state)))'
+    aws ec2 describe-instances --max-items=1000 --page-size=1000 \
+      | jq -r --arg state "${state}" -f "${DAVINCI_CLONE}/jq/aws-find/ec2-1.jq"
   )
 
   if [[ "${all}" == 'true' ]]; then
@@ -123,21 +118,7 @@ HERE
 
   local table=$(
     echo "${instances}" \
-      | jq -r --arg state "${state}" 'map([
-          .PublicIpAddress // "",
-          .PrivateIpAddress // "",
-          ((.Tags // []) | map(select(.Key == "Name")) | .[] | .Value) // "",
-          .State.Name // "",
-          .InstanceType // "",
-          .ImageId // "",
-          .LaunchTime // "",
-          .KeyName // "",
-          .SubnetId // "",
-          .CidrBlock // "",
-          .InstanceId // ""
-        ])
-        | .[]
-        | @csv' \
+      | jq -r --arg state "${state}" -f "${DAVINCI_CLONE}/jq/aws-find/ec2-2.jq" \
       | grep -i "${filter}" \
       | tableme ${headers} ${args}
   )

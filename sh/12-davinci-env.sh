@@ -25,13 +25,13 @@ davinci-davinci-env-unset() {
     return 0
   fi
 
+  # unset all the exported vars
+  unset DAVINCI_ENV
+
   if ! [[ -d "${curr_env_dir}" ]]; then
     #echo "davinci-env dir doesn't exist '${curr_env_dir}'"
     return 1
   fi
-
-  # unset all the exported vars
-  unset DAVINCI_ENV
 
   for e in $(find "${curr_env_dir}" -type f -name "*.sh" | xargs grep -h '^export' | sed -e's/^export //' -e's/=.\+$//'); do
     unset "${e}"

@@ -186,7 +186,8 @@ _davinci_env_ps1() {
     new_ps1="${env_color}${DAVINCI_ENV}"
   fi
 
-  if [[ -n "${AWS_ENV}" ]] ; then
+  #if [[ -n "${AWS_ENV}" ]] ; then
+  if env | grep -q '^AWS_' ; then
      new_ps1="${new_ps1}${aws_color}a"
   fi
 

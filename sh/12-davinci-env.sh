@@ -26,17 +26,59 @@ davinci-davinci-env-unset() {
   fi
 
   if ! [[ -d "${curr_env_dir}" ]]; then
-    echo "davinci-env dir doesn't exist '${curr_env_dir}'"
+    #echo "davinci-env dir doesn't exist '${curr_env_dir}'"
     return 1
   fi
 
   # unset all the exported vars
   unset DAVINCI_ENV
-  unset AWS_ENV
 
   for e in $(find "${curr_env_dir}" -type f -name "*.sh" | xargs grep -h '^export' | sed -e's/^export //' -e's/=.\+$//'); do
     unset "${e}"
   done
+
+  # TODO, unset the local env too
+}
+
+_davinci-env_source_sh_files() {
+  local path="$1"
+
+  for f in $(find "${path}" -type f -name '*.sh'); do
+    . "${f}"
+  done
+
+  for f in $(find "${path}" -type f -name '*.sh.gpg'); do
+    . <(gpg -d "${f}")
+  done
+}
+
+_davinci-env_local_git_env_path() {
+  local new_env="$1"
+  local current_git_root
+  local git_env_dir
+
+  if ! _lib_git_assert_in_repo; then
+    return 1
+  fi
+
+  current_git_root="$(_lib_git_top_level)"
+  git_env_dir="${current_git_root}/davinci/env/${new_env}"
+
+  if [[ -d "${git_env_dir}" ]]; then
+    echo "${git_env_dir}"
+    return 0
+  else
+    return 1
+  fi
+}
+
+_davinci-env_print_env() {
+  if [[ -n "${DAVINCI_ENV}" ]]; then
+    echo "${DAVINCI_ENV}"
+    return 0
+  else
+    return 1
+  fi
 }
 
 davinci-davinci-env() {
@@ -45,30 +87,28 @@ davinci-davinci-env() {
 
   # first, maybe print the current env.
   if [[ -z "${new_env}" ]]; then
-    if [[ -n "${DAVINCI_ENV}" ]]; then
-      echo "${DAVINCI_ENV}"
-      return 0
-    else
-      return 1
-    fi
+    _davinci-env_print_env
   fi
 
   # second, unset the previous env so that we don't have vars leftover
   davinci-davinci-env-unset
 
-  #davinci-aws-env "${new_env}"
-  local new_env_dir="${DAVINCI_ENV_PATH}/${new_env}"
+  # set the new env
+  export DAVINCI_ENV="${new_env}"
 
-  if ! [[ -d "${new_env_dir}" ]]; then
+  local global_env_dir="${DAVINCI_ENV_PATH}/${new_env}"
+  local git_env_dir="$(_davinci-env_local_git_env_path "${new_env}")"
+
+  if ! [[ -d "${global_env_dir}" ]] && ! [[ -d "${git_env_dir}" ]]; then
     echo "no davinci-env called '${new_env}'"
     return 1
+  else
+    if [[ -d "${global_env_dir}" ]]; then
+      _davinci-env_source_sh_files "${global_env_dir}"
+    fi
+
+    if [[ -d "${git_env_dir}" ]]; then
+      _davinci-env_source_sh_files "${git_env_dir}"
+    fi
   fi
-
-  export DAVINCI_ENV="${new_env}"
-  # i want to eventually get off AWS_ENV and only use DAVINCI_ENV
-  export AWS_ENV="${DAVINCI_ENV}"
-
-  for f in $(find "${new_env_dir}" -type f -name "*.sh"); do
-    . "${f}"
-  done
 }

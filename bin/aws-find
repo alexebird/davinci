@@ -184,7 +184,7 @@ volume() {
 }
 
 main() {
-  [[ -z "${AWS_ENV}" ]] && { echo "must set aws-env" ; exit 1 ; }
+  [[ -z "${DAVINCI_ENV}" ]] && { echo "must set davinci-env" ; exit 1 ; }
 
   local fn="${1:?must pass arg: asg, elb, ec2, ami}" ; shift
   local other_args="$*"

@@ -29,7 +29,7 @@ all_jobs() {
 transform_jobs_for_table() (set -euo pipefail
   cat - \
     | jq --slurp '. | sort_by(.CreateTime) | reverse' \
-    | jq -r -f "${DAVINCI_HOME}/davinci/jq/nplus/alloc-table.jq"
+    | jq -r -f "${DAVINCI_CLONE}/jq/nplus/alloc-table.jq"
     #| jq '.'
 )
 

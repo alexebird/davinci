@@ -34,7 +34,7 @@ davinci-davinci-env-unset() {
   unset DAVINCI_ENV
   unset AWS_ENV
 
-  for e in $(find devo/ -type f -name "*.sh" | xargs grep -h '^export' | sed -e's/^export //' -e's/=.\+$//'); do
+  for e in $(find "${curr_env_dir}" -type f -name "*.sh" | xargs grep -h '^export' | sed -e's/^export //' -e's/=.\+$//'); do
     unset "${e}"
   done
 }

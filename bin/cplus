@@ -45,7 +45,7 @@ main() {
     | jq -r '. | keys | sort[]' \
     | grep "$1" \
     | parallel --keep-order "curl -L -s ${CONSUL_HTTP_ADDR}/v1/health/service/{1}" \
-    | jq -s -r -f "${DAVINCI_HOME}/davinci/jq/cplus/consul-services.jq" \
+    | jq -s -r -f "${DAVINCI_CLONE}/jq/cplus/consul-services.jq" \
     | tableme SERVICE NODE STATUS
 }
 

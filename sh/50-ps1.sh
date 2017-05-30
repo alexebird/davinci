@@ -172,7 +172,7 @@ _davinci_env_ps1() {
 
   # empty prompt section if env isnt set
   if [[ -z "${DAVINCI_ENV}" ]] ; then
-    if [[ "$(ps -ef | grep 'openvpn --config' | wc -l)" != "0" ]]; then
+    if [[ "$(ps -ef | grep 'openvpn --config' | grep -v grep | wc -l)" != "0" ]]; then
       echo "${parens_color}(${vpn_color}v${parens_color})${COLOR_RESET}"
     else
       echo

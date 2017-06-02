@@ -1,0 +1,21 @@
+rvm:
+  - 2.2.7
+  - 2.3.4
+  - 2.4.1
+  - ruby-head
+  - jruby-9.1.8.0
+  - foobar
+
+matrix:
+  allow_failures:
+  - rvm: jruby-9.1.8.0
+
+before_script:
+  - unset JRUBY_OPTS
+
+script: scropt
+
+addons:
+  apt:
+    packages:
+      - haveged

@@ -16,9 +16,9 @@ _davinci_source_bash() {
 }
 
 _davinci_source_user_dot_davinci() {
-  for path in $(_davinci_path_components); do
-    if [[ -d "${path}/sh" ]]; then
-      for f in $(find "${path}/sh" -type f -name '*.sh' | sort); do
+  for path_ in $(_davinci_path_components); do
+    if [[ -d "${path_}/sh" ]]; then
+      for f in $(find "${path_}/sh" -type f -name '*.sh' | sort); do
         . "${f}"
       done
     fi
@@ -59,13 +59,12 @@ davinci-toolme() {
 # /end config env vars
 # ====================
 
-
 export PATH="${DAVINCI_CLONE}/bin:${PATH}"
 export PATH="${DAVINCI_CLONE}/go/bin:${PATH}"
 
-for path in $(_davinci_path_components); do
-  if [[ -d "${path}/bin" ]]; then
-    export PATH="${path}/bin:${PATH}"
+for path_ in $(_davinci_path_components); do
+  if [[ -d "${path_}/bin" ]]; then
+      export PATH="${path_}/bin:${PATH}"
   fi
 done
 

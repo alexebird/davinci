@@ -41,13 +41,13 @@ davinci-davinci-env-unset() {
 }
 
 _davinci-env_source_sh_files() {
-  local path="$1"
+  local path_="$1"
 
-  for f in $(find "${path}" -type f -name '*.sh'); do
+  for f in $(find "${path_}" -type f -name '*.sh'); do
     . "${f}"
   done
 
-  for f in $(find "${path}" -type f -name '*.sh.gpg'); do
+  for f in $(find "${path_}" -type f -name '*.sh.gpg'); do
     . <(gpg -d "${f}")
   done
 }

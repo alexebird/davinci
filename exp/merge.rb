@@ -8,6 +8,7 @@ def merge_2_confs(a, b)
     bkeys = b.keys
     bonly = bkeys - akeys
 
+    # recursive merge on values that a and b both have, otherwise, just use value from a
     a = akeys.map do |k|
       aval = a[k]
       if b.has_key?(k)
@@ -18,17 +19,17 @@ def merge_2_confs(a, b)
       end
     end.to_h
 
-    #puts a.inspect
-
+    # add keys from b that a doesnt have
     bonly.each do |k|
-      #puts k
       a[k] = b[k]
     end
 
     a
   elsif a.is_a?(Array) && b.is_a?(Array)
+    # add elements from b that a doesnt have
     a.concat(b - a)
   else
+    # always prefer b for non-recursive values
     b
   end
 end

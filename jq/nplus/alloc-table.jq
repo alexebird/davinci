@@ -55,6 +55,7 @@ map(
             ),
             $NodeID,
             $EvalID,
+            $ID,
             ($CreateTime | tostring | sub("[0-9]{9}$"; "") | tonumber | todate)
         ]
     )

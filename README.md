@@ -110,28 +110,28 @@ The commands and sourced-functions in DaVinci are automatically prefixed with `d
 $ davinci-<tab><tab>
 ```
 
-aws-env
--------
+davinci-env
+-----------
 
 Example:
 
 ```bash
 # set
-foo@bar$ aws-env dev
-# if enabled, the davinci prompt detects aws-env and shows it as (a:dev)
-# print/get the aws-env
-foo@bar(a:dev)$ aws-env
+foo@bar$ davinci-env dev
+# if enabled, the davinci prompt detects davinci-env and shows it as (deva) (with the a in colored)
+# print/get the davinci-env
+foo@bar(deva)$ davinci-env
 dev
 ```
 
-This tooling generally relies on your AWS creds being provided via environment
-variables. The command `aws-env` controls this. It is also recommended to setup
-your prompt to show the current `aws-env`. `aws-env` operates by convention.
-For an env called `dev`, it looks for a file named `~/.davinci-env/aws/dev.sh`,
-with these env vars being exported:
+This tooling generally relies on, for example, your AWS creds being provided
+via environment variables. The command `davinci-env` controls this. It is also
+recommended to setup your prompt to show the current `davinci-env`.
+`davinci-env` operates by convention.  For an env called `dev`, it looks for a
+file named `~/.davinci-env/dev/aws.sh`, with these env vars being exported:
 
 ```bash
-$ cat ~/.davinci-env/aws/dev.sh
+$ cat ~/.davinci-env/dev/aws.sh
 # iam user: larry
 export AWS_DEFAULT_REGION='us-east-1'
 export AWS_REGION="${AWS_DEFAULT_REGION}"
@@ -141,7 +141,7 @@ export AWS_SECRET_ACCESS_KEY='flubberflabber'
 
 The tool `davinci-aws-make-creds-file ENV` looks in `~/Downloads` for the most recent
 file named `credentials*.csv` (which is downloaded from the IAM console), and generates
-the appropriate `ENV.sh` file for placement into `~/.davinci-env/aws/`.
+the appropriate file contents for placement into `~/.davinci-env/dev/aws.sh`.
 
 Safety Prompt
 -------------
@@ -152,17 +152,16 @@ The safety prompt changes your prompt from this:
 foo@bar:/path$
 ```
 
-to something like this:
+to something like this (color not shown in readme):
 
 ```
-foo@bar:/path (a:dev)(n:dev)(v:dev)$
+foo@bar:/path (devn)$
 ```
 
 Legend:
 
-- `(a:dev)` - the AWS environment is set to `dev`. you can set this using the tool `aws-env`.
-- `(n:dev)` - the Nomad environment is set to `dev`. you can set this using the tool `nomad-env`. If the word `dev` is red, then the nomad tunnel is down.
-- `(v:dev)` - the `dev-us-east-1` tunnelblick openVPN connection is up.
+- `(deva)` - the AWS environment is set to `dev`. you can set this using the tool `aws-env`.
+- `(devv)` - the `dev` OpenVPN connection is up.
 
 gpgp
 ----

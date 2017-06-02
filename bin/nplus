@@ -4,7 +4,7 @@ set -euo pipefail
 
 usage() {
   cat <<HERE
-Usage: nplus OPTS
+usage: nplus [-j -h] [JOB]
 
 -j    json output
 -h    help me
@@ -34,19 +34,13 @@ transform_jobs_for_table() (set -euo pipefail
 )
 
 job_table() (set -euo pipefail
-  local json="$1"
-
-  if [[ "${json}" == 'true' ]]; then
-    cat -
-  else
-    cat - \
-      | transform_jobs_for_table \
-      | tableme JOB GROUP TASK STATE TYPE IP NODE EVAL CREATED
-  fi
+  cat - \
+    | transform_jobs_for_table \
+    | tableme JOB GROUP TASK STATE TYPE IP NODE EVAL ALLOC CREATED
 )
 
 main() {
-  [[ -z "${NOMAD_ADDR}" ]] && { echo 'must run nomad-env' ; exit 1 ; }
+  [[ -z "${NOMAD_ADDR}" ]] && { echo 'must set NOMAD_ADDR' ; exit 1 ; }
 
   local json='false'
 
@@ -71,9 +65,17 @@ main() {
   local args="$*"
 
   if [[ "$#" -eq 0 ]]; then
-    all_jobs | job_table "${json}"
+    if [[ "${json}" == 'true' ]]; then
+      all_jobs | jq -s '.'
+    else
+      all_jobs | job_table "${json}"
+    fi
   else
-    one_job "$1" | job_table "${json}"
+    if [[ "${json}" == 'true' ]]; then
+      one_job "$1"
+    else
+      one_job "$1" | job_table "${json}"
+    fi
   fi
 }
 

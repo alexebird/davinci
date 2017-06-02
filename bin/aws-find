@@ -79,7 +79,7 @@ ec2() {
   -f VAL    filter for instance name containing VAL
   -h        show this help text
 HERE
-          exit
+        exit
         ;;
       \?)
         echo "invalid option: -${OPTARG}" >&2

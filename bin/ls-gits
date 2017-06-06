@@ -4,6 +4,7 @@ set -euo pipefail
 . "${DAVINCI_CLONE}/sh/01-colors.sh"
 
 div="----------------------------------------------------------------------------"
+first='true'
 
 for repo in $(ls -1trh "${DAVINCI_HOME}"); do
   cd "${DAVINCI_HOME}/${repo}"
@@ -18,6 +19,11 @@ for repo in $(ls -1trh "${DAVINCI_HOME}"); do
       header="${header}="
     done
 
+    if [[ "${first}" == "false" ]]; then
+      echo
+      echo
+      echo
+    fi
 
     echo -e "\e[1;33m${header}\e[0m"
 
@@ -43,9 +49,6 @@ for repo in $(ls -1trh "${DAVINCI_HOME}"); do
       echo -e "\e[1;33m==\e[0m  \`${div}"
     fi
 
-    echo
-    echo
-    echo
+    first='false'
   fi
-
 done

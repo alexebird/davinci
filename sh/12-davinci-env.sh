@@ -41,7 +41,7 @@ davinci-davinci-env-unset() {
   local git_env_dir="$(davinci-env::local_git_env_path "${DAVINCI_ENV}")"
 
   if [[ -z "${DAVINCI_ENV}" ]]; then
-    echo "DAVINCI_ENV not set, exiting"
+    #echo "DAVINCI_ENV not set, exiting"
     return 1
   fi
 

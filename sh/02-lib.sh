@@ -1,7 +1,7 @@
 #!/bin/bash
 
 _lib_git_assert_in_repo() {
-  git rev-parse --show-toplevel > /dev/null
+  git rev-parse --show-toplevel > /dev/null 2>&1
 }
 
 _lib_git_top_level() {

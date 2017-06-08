@@ -199,11 +199,13 @@ HERE
 
   # these are the key ids we want to end up having imported at the end of the process.
   local desired_keys="$(_gpgp_cmd_ls false $(_gpgp_ls_roles) | sort | uniq)"
+  echo "$(_gpgp_cmd_ls false $(_gpgp_ls_roles) | sort | uniq)"
 
   # get currently imported public keys for the owner's domains
   local current_keys=$(
     gpg --list-keys \
       | grep -B1 -P "${DAVINCI_GPGP_EMAIL_DOMAINS}" \
+      | grep -vP "${DAVINCI_GPGP_PUB_KEY_ID_BLACKLIST}" \
       | grep pub \
       | sed -n -e's;^pub.\+\/\(.\+\) .\+$;\1;p' \
       | sort \
@@ -222,7 +224,7 @@ HERE
 
   echo desired: ${desired_keys}
   echo current: ${current_keys}
-  echo delete:  ${delete_keys}
+  echo delete:\ \ ${delete_keys}
   echo
 
   local desired_regex="$(_join '|' ${desired_keys})"

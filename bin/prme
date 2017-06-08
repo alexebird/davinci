@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-org="davinci"
 repo="$(basename "$(git rev-parse --show-toplevel)")"
-title="${1:?must set PR title}"
-body="${2:-${title}}"
+org="${1:?must set org}" ; shift
+title="${1:?must set PR title}" ; shift
+body="${1:-${title}}" ; shift
 branch="$(git branch-search)"
 
 function _url_encode() {
@@ -23,4 +23,4 @@ body="$(_url_encode "${body}")"
 url="http://github.com/${org}/${repo}/compare/master...${branch}?title=${title}&body=${body}"
 
 #echo "${url}"
-open "${url}"
+xdg-open "${url}"

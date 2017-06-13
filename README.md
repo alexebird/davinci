@@ -70,9 +70,9 @@ export DAVINCI_OPTS='prompt'
 # - The path where gpgp should look.
 # - Inside DAVINCI_GPGP_PATH, the expected structure is:
 # - "${DAVINCI_GPGP_PATH}"
-#   - gpg/
-#     - public/    # public gpg keys
-#     - roles/     # gpgp roles
+#   └── gpg/
+#       ├── public/    # public gpg keys
+#       └── roles/     # gpgp roles
 export DAVINCI_GPGP_PATH="${DAVINCI_HOME}/infra"
 ```
 
@@ -80,6 +80,12 @@ export DAVINCI_GPGP_PATH="${DAVINCI_HOME}/infra"
 # DAVINCI_GPGP_EMAIL_DOMAINS
 # - You or your company's domain or domains ('|' separated) that are associated with gpg public keys.
 export DAVINCI_GPGP_EMAIL_DOMAINS='cool-co.com'
+```
+
+```bash
+# DAVINCI_GPGP_PUB_KEY_ID_BLACKLIST
+# - patterns separated by a pipe which should not be deleted by gpgp import
+export DAVINCI_GPGP_PUB_KEY_ID_BLACKLIST='DE4DBEEF'
 ```
 
 Finally, source davinci.

@@ -36,7 +36,7 @@ transform_jobs_for_table() (set -euo pipefail
 job_table() (set -euo pipefail
   cat - \
     | transform_jobs_for_table \
-    | tableme JOB GROUP TASK STATE TYPE IP NODE EVAL ALLOC CREATED
+    | tableme JOB GROUP TASK STATUS STATE TYPE IP NODE EVAL ALLOC CREATED
 )
 
 main() {

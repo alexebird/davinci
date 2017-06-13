@@ -7,6 +7,7 @@ map(
     # set some vars
     . as {
         JobID: $JobID,
+        ClientStatus: $ClientStatus,
         TaskStates: $TaskStates,
         TaskResources: $TaskResources,
         TaskGroup: $TaskGroupName,
@@ -42,6 +43,7 @@ map(
             $JobID,
             $TaskGroupName,
             .key,                # task name
+            $ClientStatus,
             .value.State // "",  # task state
             $Type // "",
             (

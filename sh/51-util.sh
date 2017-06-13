@@ -5,7 +5,6 @@ alias dpp='docker ps --format "table {{.ID}}\t{{.Status}}\t{{.Ports}}\t{{.Names}
 alias wdp="watch -n1 'docker ps --format \"table {{.ID}}\t{{.Status}}\t{{.Names}}\"'"
 alias urlencode='python -c "import urllib, sys; print urllib.quote(sys.argv[1])"'
 alias urldecode='python -c "import urllib, sys; print urllib.unquote(sys.argv[1])"'
-alias genpass="tr -dc '_%#$@&*^!A-Za-z0-9' < /dev/urandom | head -c20; echo"
 alias n='nomad'
 alias ec2='aws-find ec2'
 

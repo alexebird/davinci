@@ -477,6 +477,7 @@ Subcommands:
 
 (run with -h for more)
 
+encrypt     Ecrypt a file with one or more roles.
 recips      Prints a \`-r FOOBAR -r BAR...\` string for use with gpg.
 ls          Prints the role heirarchy for all roles.
 ls ROLE...  Prints the role heirarchy for the specified roles.
@@ -485,7 +486,17 @@ reencrypt   Reencrypts the secrets at DAVINCI_GPGP_SECRETS_PATH.
 HERE
 }
 
+gpgp::assert_gpgp_config() {
+  if [[ -z "${DAVINCI_GPGP_EMAIL_DOMAINS:-}" ]]; then
+    echo "gpgp cannot be used when DAVINCI_GPGP_EMAIL_DOMAINS is not set."
+    return 1
+  fi
+  return 0
+}
+
 main() {
+  gpgp::assert_gpgp_config
+
   local cmd="${1:-}"
 
   if [[ -z "${cmd}" ]]; then
@@ -521,6 +532,11 @@ main() {
     reencrypt)
       shift
       _gpgp_cmd_reencrypt "$@"
+      ;;
+
+    encrypt)
+      shift
+      _gpgp_cmd_encrypt "$@"
       ;;
 
     # default is to encrypt a file or stdin

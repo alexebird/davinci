@@ -30,6 +30,10 @@ _davinci_source_davinci_env_auto() {
     for f in $(find ${DAVINCI_ENV_PATH}/auto/ -type f -name '*.sh' | sort); do
       . "${f}"
     done
+
+    for f in $(find ${DAVINCI_ENV_PATH}/auto/ -type f -name '*.sh.gpg' | sort); do
+      . <(gpg -d "${f}")
+    done
   fi
 }
 

@@ -269,6 +269,8 @@ _gpgp_cmd_encrypt() {
         ;;
       h)
         cat <<HERE
+gpgp encrypt [OPTIONS] ROLE [ROLE...] FILE
+
   -o    more options to be passed directly to gpg
   -r    rm the original unencrypted file
   -h    show this help text
@@ -306,7 +308,7 @@ HERE
     gpg ${gpg_opts}-e "$(_gpgp_cmd_recips ${roles})" "${file}"
 
     if [[ "${rm_orig}" == "true" ]]; then
-      echo "encrypted '${file}'"
+      echo "encrypted ${file} -> ${file}.gpg"
       rm -v "${file}"
     fi
 

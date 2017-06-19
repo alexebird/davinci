@@ -169,6 +169,7 @@ _davinci_env_ps1() {
   local sensitive_env_color="${COLOR_RED_HL}"
   local vpn_color="${COLOR_PURPLE}"
   local aws_color="${COLOR_YELLOW}"
+  local do_color="${COLOR_BLUE}"
 
   # empty prompt section if env isnt set
   if [[ -z "${DAVINCI_ENV}" ]] ; then
@@ -189,6 +190,10 @@ _davinci_env_ps1() {
   #if [[ -n "${AWS_ENV}" ]] ; then
   if env | grep -q '^AWS_' ; then
      new_ps1="${new_ps1}${aws_color}a"
+  fi
+
+  if env | grep -q '^DIGITALOCEAN_' ; then
+     new_ps1="${new_ps1}${do_color}d"
   fi
 
   if davinci-ovpn-native-ls | grep -q "${DAVINCI_ENV}" ; then

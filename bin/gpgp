@@ -405,6 +405,7 @@ _gpgp_secrets_reencrypt_dir() {
 
 _gpgp_cmd_reencrypt() {
   local dry_run='false'
+  local secrets_path
 
   while getopts "hn" opt; do
     case "${opt}" in
@@ -415,6 +416,11 @@ _gpgp_cmd_reencrypt() {
         ;;
       h)
         cat <<HERE
+gpgp reencrypt [OPTIONS] [SECRETS_PATH]
+
+SECRETS_PATH defaults to DAVINCI_GPGP_SECRETS_PATH, otherwise
+must be inside DAVINCI_GPGP_SECRETS_PATH.
+
   -n    dry run
   -h    show this help text
 HERE
@@ -431,17 +437,30 @@ HERE
     esac
   done
 
+  shift $(($OPTIND - 1))
+
+  secrets_path="${1:-}"
+
+  if [[ -z "${secrets_path}" ]]; then
+    secrets_path="${DAVINCI_GPGP_SECRETS_PATH}"
+  elif [[ "${secrets_path}" == *..* ]]; then
+    echo "no '..' allowed in SECRETS_PATH"
+    exit 1
+  else
+    secrets_path="${DAVINCI_GPGP_SECRETS_PATH}/${secrets_path}"
+  fi
+
   # try to do a dry run first
   echo "checking for roles"
   echo "=================="
-  if _gpgp_cmd_reencrypt_dirs 'true' ; then
+  if _gpgp_cmd_reencrypt_dirs 'true' "${secrets_path}"; then
     echo "check passed. ready to encrypt."
     echo
 
     if [[ "${dry_run}" == 'false' ]]; then
       echo "re-encrypting secrets"
       echo "====================="
-      _gpgp_cmd_reencrypt_dirs 'false'
+      _gpgp_cmd_reencrypt_dirs 'false' "${secrets_path}"
     fi
   else
     echo "check failed. no encryption was done."
@@ -449,8 +468,9 @@ HERE
 }
 
 _gpgp_cmd_reencrypt_dirs() {
-  local dry_run="$1"
-  for dir in $(find "${DAVINCI_GPGP_SECRETS_PATH}" -name '.git' -prune -o -type d -print) ; do
+  local dry_run="$1" ; shift
+  local secrets_path="$1" ; shift
+  for dir in $(find "${secrets_path}" -name '.git' -prune -o -type d -print) ; do
     _gpgp_secrets_reencrypt_dir "${dir}" "${dry_run}" || return 1
     echo
   done

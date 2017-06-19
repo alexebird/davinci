@@ -96,30 +96,39 @@ davinci-davinci-env() {
   _davinci_help_helper "$@" && return 0
   local new_env="${1:-}"
 
-  # first, maybe print the current env.
+  # maybe print the current env
   if [[ -z "${new_env}" ]]; then
     davinci-env::print_env
+    return $?
   fi
 
-  # second, unset the previous env so that we don't have vars leftover
-  davinci-davinci-env-unset
-
-  # set the new env
-  export DAVINCI_ENV="${new_env}"
-
+  # check if new_env exists
   local global_env_dir="${DAVINCI_ENV_PATH}/${new_env}"
   local git_env_dir="$(davinci-env::local_git_env_path "${new_env}")"
 
   if ! [[ -d "${global_env_dir}" ]] && ! [[ -d "${git_env_dir}" ]]; then
     echo "no davinci-env called '${new_env}'"
     return 1
-  else
-    if [[ -d "${global_env_dir}" ]]; then
-      davinci-env::source_sh_files "${global_env_dir}"
-    fi
-
-    if [[ -d "${git_env_dir}" ]]; then
-      davinci-env::source_sh_files "${git_env_dir}"
-    fi
   fi
+
+  # unset the previous env so that we don't have vars leftover
+  davinci-davinci-env-unset
+
+  # set the new env
+  export DAVINCI_ENV="${new_env}"
+
+  #if ! [[ -d "${global_env_dir}" ]] && ! [[ -d "${git_env_dir}" ]]; then
+    #unset DAVINCI_ENV
+    #echo "no davinci-env called '${new_env}'"
+    #return 1
+  #else
+  if [[ -d "${global_env_dir}" ]]; then
+    davinci-env::source_sh_files "${global_env_dir}"
+  fi
+
+  if [[ -d "${git_env_dir}" ]]; then
+    davinci-env::source_sh_files "${git_env_dir}"
+  fi
+  #fi
+
 }

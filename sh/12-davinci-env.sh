@@ -117,11 +117,6 @@ davinci-davinci-env() {
   # set the new env
   export DAVINCI_ENV="${new_env}"
 
-  #if ! [[ -d "${global_env_dir}" ]] && ! [[ -d "${git_env_dir}" ]]; then
-    #unset DAVINCI_ENV
-    #echo "no davinci-env called '${new_env}'"
-    #return 1
-  #else
   if [[ -d "${global_env_dir}" ]]; then
     davinci-env::source_sh_files "${global_env_dir}"
   fi
@@ -129,6 +124,4 @@ davinci-davinci-env() {
   if [[ -d "${git_env_dir}" ]]; then
     davinci-env::source_sh_files "${git_env_dir}"
   fi
-  #fi
-
 }

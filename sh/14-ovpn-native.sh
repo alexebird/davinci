@@ -9,16 +9,23 @@ _ovpn_connect() {
   fi
 }
 
+_ovpn_ls() {
+  local env="$1" ; shift
+  local grep_flags="${1:-}" ; shift
+  ps -ef \
+    | grep 'openvpn --config' \
+    | grep -v grep \
+    | grep --colour=never -P ${grep_flags} "(?<=${DAVINCI_ENV_PATH}/)${env}(?=/config\.ovpn)"
+}
+
 _ovpn_pid() {
   local env="$1"
-  ps -ef | grep 'openvpn --config' | grep -v grep | grep "${env}" | awk '{print $2}'
+  _ovpn_ls "${env}" | awk '{print $2}'
 }
 
 _ovpn_cmd_up() {
   local env="$1"
   _ovpn_connect "${env}"
-  #while true ; do
-  #done
 }
 
 _ovpn_cmd_down() {
@@ -26,12 +33,16 @@ _ovpn_cmd_down() {
   sudo kill "$(_ovpn_pid ${env})"
 }
 
+_ovpn_cmd_reup() {
+  local env="$1"
+  _ovpn_cmd_down "${env}"
+  sleep 1
+  _ovpn_cmd_up "${env}"
+}
+
 davinci-ovpn-native-ls() {
-  ps -ef \
-    | grep 'openvpn --config' \
-    | grep -v grep \
-    | grep --colour=never -oP -- "(?<=${DAVINCI_ENV_PATH}/)${DAVINCI_ENV}(?=/config\.ovpn)" \
-    | sort
+  local env="${DAVINCI_ENV:?must set davinci-env}"
+  _ovpn_ls "${env}" '-o' | sort
 }
 
 davinci-ovpn() {

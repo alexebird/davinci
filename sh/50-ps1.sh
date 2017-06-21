@@ -167,6 +167,7 @@ _davinci_env_ps1() {
   local parens_color="${COLOR_LIGHT_GREEN}"
   local env_color="${COLOR_LIGHT_GREEN}"
   local sensitive_env_color="${COLOR_RED_HL}"
+  local somewhat_sensitive_env_color="${COLOR_YELLOW_HL}"
   local vpn_color="${COLOR_PURPLE}"
   local aws_color="${COLOR_YELLOW}"
   local do_color="${COLOR_BLUE}"
@@ -183,6 +184,8 @@ _davinci_env_ps1() {
 
   if [[ "${DAVINCI_ENV}" == "prod" ]] ; then
     new_ps1="${sensitive_env_color}${DAVINCI_ENV}"
+  elif [[ "${DAVINCI_ENV}" == "dev" ]] ; then
+    new_ps1="${somewhat_sensitive_env_color}${DAVINCI_ENV}"
   else
     new_ps1="${env_color}${DAVINCI_ENV}"
   fi

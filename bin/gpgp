@@ -269,11 +269,14 @@ _gpgp_cmd_encrypt() {
         ;;
       h)
         cat <<HERE
-gpgp encrypt [OPTIONS] ROLE [ROLE...] FILE
+gpgp encrypt [OPTIONS] ROLE [ROLE...] [FILE | -]
 
-  -o    more options to be passed directly to gpg
-  -r    rm the original unencrypted file
-  -h    show this help text
+If FILE is equal to '-', then gpgp expects some data to piped in via stdin, and
+writes the encrypted output in ascii-armor to stdout.
+
+  -o    More options to be passed directly to gpg (wrap in quotes).
+  -r    Remove the original unencrypted file.
+  -h    Show this help text.
 HERE
           exit
         ;;
@@ -313,10 +316,13 @@ HERE
     fi
 
   # if no existing file is passed as the last arg, read from stdin, ascii armor, write to stdout.
-  else
+  elif [[ "${file}" == '-' ]]; then
     # read from stdin, write to stdout
     _gpgp_validate_roles ${roles}
     cat - | gpg ${gpg_opts}-a -e "$(_gpgp_cmd_recips ${roles})" -o-
+  else
+    echo "gpgp: error: file doesnt exist: ${file}"
+    exit 1
   fi
 }
 

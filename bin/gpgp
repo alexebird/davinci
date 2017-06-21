@@ -308,7 +308,7 @@ HERE
     unset 'roles[${#roles[@]}-1]'
     outf=''
     _gpgp_validate_roles ${roles}
-    gpg ${gpg_opts}-e "$(_gpgp_cmd_recips ${roles})" "${file}"
+    gpg ${gpg_opts}-e $(_gpgp_cmd_recips ${roles}) "${file}"
 
     if [[ "${rm_orig}" == "true" ]]; then
       echo "encrypted '${file}' -> '${file}.gpg'"
@@ -319,7 +319,7 @@ HERE
   elif [[ "${file}" == '-' ]]; then
     # read from stdin, write to stdout
     _gpgp_validate_roles ${roles}
-    cat - | gpg ${gpg_opts}-a -e "$(_gpgp_cmd_recips ${roles})" -o-
+    cat - | gpg ${gpg_opts}-a -e $(_gpgp_cmd_recips ${roles}) -o-
   else
     echo "gpgp: error: file doesnt exist: ${file}"
     exit 1

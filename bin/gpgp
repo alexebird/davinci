@@ -6,7 +6,9 @@
 #
 
 set -euo pipefail
-#set -x
+set -x
+
+GPG='gpg'
 
 _gpgp_role_path() {
   echo "${DAVINCI_GPGP_PATH}/gpg/roles/${1:-}"
@@ -203,7 +205,7 @@ HERE
 
   # get currently imported public keys for the owner's domains
   local current_keys=$(
-    gpg --list-keys \
+    "${GPG}" --list-keys \
       | grep -B1 -P "${DAVINCI_GPGP_EMAIL_DOMAINS}" \
       | grep -vP "${DAVINCI_GPGP_PUB_KEY_ID_BLACKLIST}" \
       | grep pub \
@@ -232,7 +234,7 @@ HERE
 
   if [[ -n "${desired_regex}" ]]; then
     for f in $(find "$(_gpgp_pub_key_path)" -type f -name '*.pub' | grep -P "${desired_regex}") ; do
-      cmd="gpg --import ${f}"
+      cmd="${GPG} --import ${f}"
       echo "${cmd}"
       if [[ "${dry_run}" != "true" ]]; then
         ${cmd}
@@ -242,11 +244,11 @@ HERE
   fi
 
   if [[ -s "${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt" ]]; then
-    gpg --import-ownertrust < "${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt"
+    "${GPG}" --import-ownertrust "${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt"
   fi
 
   for f in ${delete_keys} ; do
-    cmd="gpg --batch --yes --delete-key ${f}"
+    cmd=""${GPG}" --batch --yes --delete-key ${f}"
     echo "${cmd}"
     if [[ "${dry_run}" != "true" ]]; then
       ${cmd}
@@ -302,24 +304,24 @@ HERE
     gpg_opts="${gpg_opts} "
   fi
 
+  # if no existing file is passed as the last arg, read from stdin, ascii armor, write to stdout.
+  if [[ -t 1 ]] || [[ "${file}" == '-' ]]; then
+    # read from stdin, write to stdout
+    _gpgp_validate_roles ${roles}
+    cat - | "${GPG}" ${gpg_opts}-a -e $(_gpgp_cmd_recips ${roles}) -o-
+
   # if a file is passed as the last arg, encrypt it.
-  if [[ -f "${file}" ]]; then
+  elif [[ -f "${file}" ]]; then
     # remove the file from the list of args so we are only left with a list of roles
     unset 'roles[${#roles[@]}-1]'
     outf=''
     _gpgp_validate_roles ${roles}
-    gpg ${gpg_opts}-e $(_gpgp_cmd_recips ${roles}) "${file}"
+    "${GPG}" ${gpg_opts}-e $(_gpgp_cmd_recips ${roles}) "${file}"
 
     if [[ "${rm_orig}" == "true" ]]; then
       echo "encrypted '${file}' -> '${file}.gpg'"
       rm -v "${file}"
     fi
-
-  # if no existing file is passed as the last arg, read from stdin, ascii armor, write to stdout.
-  elif [[ "${file}" == '-' ]]; then
-    # read from stdin, write to stdout
-    _gpgp_validate_roles ${roles}
-    cat - | gpg ${gpg_opts}-a -e $(_gpgp_cmd_recips ${roles}) -o-
   else
     echo "gpgp: error: file doesnt exist: ${file}"
     exit 1
@@ -393,8 +395,8 @@ _gpgp_secrets_reencrypt_dir() {
       rm -f "${tmp_secret}"
       # leave no unencrypted secret on disk
       cat "${secret}" \
-        | gpg -d -o- \
-        | gpg -e $(gpgp recips ${role}) -o"${tmp_secret}" \
+        | "${GPG}" -d -o- \
+        | "${GPG}" -e $(gpgp recips ${role}) -o"${tmp_secret}" \
         && mv "${tmp_secret}" "${secret}"
     fi
   done
@@ -407,6 +409,71 @@ _gpgp_secrets_reencrypt_dir() {
       rm -v "${secret}"
     fi
   done
+}
+
+_gpgp_cmd_add-key() {
+  local dry_run='false'
+
+  while getopts "hn" opt; do
+    case "${opt}" in
+      n)
+        dry_run='true'
+        echo "dry run!"
+        echo
+        ;;
+      h)
+        cat <<HERE
+gpgp add-key [OPTIONS]
+
+Reads a public gpg key from stdin and stores it by the correct conventions.
+
+  -n    dry run
+  -h    show this help text
+HERE
+          exit
+        ;;
+      \?)
+        echo "invalid option: -${OPTARG}" >&2
+        exit 1
+        ;;
+      :)
+        echo "option -${OPTARG} requires an argument." >&2
+        exit 1
+        ;;
+    esac
+  done
+
+  shift $(($OPTIND - 1))
+
+  local new_tmp="$(_gpgp_pub_key_path '_tmp-new.pub')"
+  cat - > "${new_tmp}"
+
+  if ! grep -q 'BEGIN PGP PUBLIC KEY BLOCK' "${new_tmp}"; then
+    echo "gpgp add-key: input doesnt seem to be a public key"
+    return 1
+  fi
+
+  local key_fingerprint="$(gpg --with-fingerprint "${new_tmp}" 2>&1)"
+
+  local key_id_short="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /^pub.+\/([0-9A-Z]+)/ && puts($1)')"
+  local role_name="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /\<(.+)@/ && puts($1)')"
+  local key_size="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /^pub\s+([0-9A-Z]+)\// && puts($1)')"
+  local email="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /\<(.+)\>/ && puts($1)')"
+  local key_id_long="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /Key fingerprint = ([0-9A-Z ]+)$/ && puts($1.gsub(/\s+/, ""))')"
+
+  local key_fname="${email}-${key_size}-id:${key_id_short}.pub"
+
+  if [[ "${dry_run}" == 'true' ]]; then
+    rm -f "${new_tmp}"
+    echo "key fname: ${key_fname}"
+    echo "role name: ${role_name}"
+  else
+    mv -f "${new_tmp}" "$(_gpgp_pub_key_path "${key_fname}")"
+    echo "${key_fname}" > "$(_gpgp_role_path "${role_name}")"
+    if ! grep -q "${key_id_long}" "${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt"; then
+      echo "${key_id_long}:6:" >> "${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt"
+    fi
+  fi
 }
 
 _gpgp_cmd_reencrypt() {
@@ -512,6 +579,7 @@ recips      Prints a \`-r FOOBAR -r BAR...\` string for use with gpg.
 ls          Prints the role heirarchy for all roles.
 ls ROLE...  Prints the role heirarchy for the specified roles.
 import      Imports the public keys at DAVINCI_GPGP_PATH, and the ownertrust.txt file.
+add-key     Read a public gpg key from stdin, store it by the correct conventions, add it to ownertrust.txt.
 reencrypt   Reencrypts the secrets at DAVINCI_GPGP_SECRETS_PATH.
 HERE
 }
@@ -557,6 +625,11 @@ main() {
     import)
       shift
       _gpgp_cmd_import "$@"
+      ;;
+
+    add-key)
+      shift
+      _gpgp_cmd_add-key "$@"
       ;;
 
     reencrypt)

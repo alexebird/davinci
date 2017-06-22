@@ -540,6 +540,21 @@ HERE
   fi
 }
 
+_gpgp_cmd_find-secrets() {
+  local search_terms="$@"
+  local grep_pattern=''
+
+  for t in ${search_terms}; do
+    grep_pattern=" -e ${t}"
+  done
+
+  if [[ -n "${grep_pattern}" ]]; then
+    grep_pattern=" | grep --color=always -iP ${grep_pattern}"
+  fi
+
+  eval find "${DAVINCI_GPGP_SECRETS_PATH}" -type f -name '*.gpg' ${grep_pattern}
+}
+
 _gpgp_cmd_reencrypt_dirs() {
   local dry_run="$1" ; shift
   local secrets_path="$1" ; shift
@@ -630,6 +645,11 @@ main() {
     add-key)
       shift
       _gpgp_cmd_add-key "$@"
+      ;;
+
+    find-secrets)
+      shift
+      _gpgp_cmd_find-secrets "$@"
       ;;
 
     reencrypt)

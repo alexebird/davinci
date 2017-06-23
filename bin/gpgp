@@ -333,16 +333,18 @@ gpgp::secrets_find_role_file() {
   local dir="${1:?must pass dir}" ; shift
   local orig_dir="${dir}"
   local role_file
+  #local role
 
   while true; do
-    role_file="${dir}/gpgp-role"
+    #role_file="${dir}/gpgp-role"
+    role_file="$(find "${dir}" -maxdepth 1 -type f -name 'gpgp-role:*' | grep --color=never -P '(:.+)')"
 
     if [[ -f "${role_file}" ]]; then
-      if [[ "$(cat "${role_file}" | wc -l )" != "1" ]] || ! [[ -s "${role_file}" ]]; then
-        >&2 echo "role file ${role_file} must contain exactly one role."
-        echo ""
-        return 1
-      fi
+      #if [[ "$(cat "${role_file}" | wc -l )" != "1" ]] || ! [[ -s "${role_file}" ]]; then
+        #>&2 echo "role file ${role_file} must contain exactly one role."
+        #echo ""
+        #return 1
+      #fi
 
       echo "${role_file}"
       return 0
@@ -353,25 +355,50 @@ gpgp::secrets_find_role_file() {
       return 1
 
     else
+      # move upwards in the directory tree
       dir="$(dirname "${dir}")"
     fi
   done
 }
 
 # The assumption is that the secrets dir is versioned, so this can do potentially
-# destructive actions.
+# destructive actions. We should guard against unencrypted secrets being added
+# to version control, which we do.
 gpgp::secrets_reencrypt_dir() {
   local dir="${1:?must pass dir}" ; shift
   local dry_run="${1:-false}" ; shift
 
+
+
+
+  #local role_file="$(gpgp::secrets_find_role_file "${dir}")"
+  ## if there's no role file, check if dir only has dirs in it, meaning
+  ## there are no secrets in dir to protect from not being encrypted.
+  #if [[ -z "${role_file}" ]]; then
+    ## how many regular files in are in dir?
+    #if [[ "$(find "${dir}" -maxdepth 1 -name '.git' -prune -o -type f -print | wc -l)" == "0" ]]; then
+      ## if there are none, don't bother to do anything else because the dir has no secrets to encrypt
+      ##:
+      #return 0
+    #else
+      #>&2 echo "role file not found for directory ${dir} or in any parent dir."
+      #return 1
+    #fi
+  #fi
+
+
+
+
   local role_file="$(gpgp::secrets_find_role_file "${dir}")"
-  # if there's no role file, check if dir only has dirs in it, meaning
-  # there are no secrets in dir to protect from not being encrypted.
+  # if there's no role file, check if `dir` has only other directories in it, meaning
+  # there are no secrets in `dir` to protect from not being encrypted, and thus it's okay
+  # if `dir` contains no role file. return 0 in that case, because there are no secrets
+  # to reencrypt in `dir`.
   if [[ -z "${role_file}" ]]; then
     # how many regular files in are in dir?
     if [[ "$(find "${dir}" -maxdepth 1 -name '.git' -prune -o -type f -print | wc -l)" == "0" ]]; then
-      # if there are none, don't both to do anything else because the dir has no secrets to encrypt
-      :
+      # if there are none, don't bother to do anything else because the dir has no secrets to encrypt.
+      #:
       return 0
     else
       >&2 echo "role file not found for directory ${dir} or in any parent dir."
@@ -379,10 +406,15 @@ gpgp::secrets_reencrypt_dir() {
     fi
   fi
 
-  local role="$(cat "${role_file}")"
-  if [[ -z "${role}" ]]; then
-    return 1
-  fi
+
+
+  # is the role file empty?
+  #local role="$(cat "${role_file}")"
+  #if [[ -z "${role}" ]]; then
+    #return 1
+  #fi
+
+  local role="$(echo "${role_file}" | grep --color=never -oP '(?<=:).*')"
 
   gpgp::validate_roles ${role}
   echo "dir:  ${dir}"
@@ -404,7 +436,7 @@ gpgp::secrets_reencrypt_dir() {
 
   # if it doesn't end with gpg, just encrypt and delete original.
   # if the file ends with '.cleartext', dont worry about encrypting it.
-  for secret in $(find "${dir}" -maxdepth 1 -name '.git' -prune -o \( -type f -a -not -name '*.gpg' -a -not -name 'gpgp-role' \) -print) ; do
+  for secret in $(find "${dir}" -maxdepth 1 -name '.git' -prune -o \( -type f -a -not -name '*.gpg' -a -not -name 'gpgp-role:*' \) -print) ; do
     echo "+   ${secret}"
 
     if [[ "${dry_run}" == "true" ]]; then
@@ -565,7 +597,9 @@ gpgp::cmd_find-secrets() {
 gpgp::cmd_reencrypt_dirs() {
   local dry_run="$1" ; shift
   local secrets_path="$1" ; shift
-  for dir in $(find "${secrets_path}" -name '.git' -prune -o -type d -print) ; do
+  # reverse sort here so that lower-depth dirs are encrypted first, so that their roles will be
+  # applied correctly.
+  for dir in $(find "${secrets_path}" -name '.git' -prune -o -type d -print | sort -r) ; do
     gpgp::secrets_reencrypt_dir "${dir}" "${dry_run}" || return 1
     echo
   done

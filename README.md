@@ -70,7 +70,7 @@ export DAVINCI_OPTS='prompt'
 # - The path where gpgp should look.
 # - Inside DAVINCI_GPGP_PATH, the expected structure is:
 # - "${DAVINCI_GPGP_PATH}"
-#   └── gpg/
+#   └── gpgp/
 #       ├── public/    # public gpg keys
 #       └── roles/     # gpgp roles
 export DAVINCI_GPGP_PATH="${DAVINCI_HOME}/infra"

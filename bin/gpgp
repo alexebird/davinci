@@ -11,11 +11,11 @@ set -euo pipefail
 GPG='gpg'
 
 gpgp::role_path() {
-  echo "${DAVINCI_GPGP_PATH}/gpg/roles/${1:-}"
+  echo "${DAVINCI_GPGP_PATH}/gpgp/roles/${1:-}"
 }
 
 gpgp::pub_key_path() {
-  echo "${DAVINCI_GPGP_PATH}/gpg/public/${1:-}"
+  echo "${DAVINCI_GPGP_PATH}/gpgp/public/${1:-}"
 }
 
 gpgp::secrets_path() {

@@ -394,7 +394,7 @@ gpgp::secrets_reencrypt_dir() {
     if [[ "${dry_run}" == "false" ]]; then
       local tmp_secret="${secret/%gpg/__new.gpg}"
       rm -f "${tmp_secret}"
-      # leave no unencrypted secret on disk
+      # dont ever write the unencrypted secret to disk when reencrypting.
       cat "${secret}" \
         | "${GPG}" -d -o- \
         | "${GPG}" -e $(gpgp recips ${role}) -o"${tmp_secret}" \
@@ -403,9 +403,15 @@ gpgp::secrets_reencrypt_dir() {
   done
 
   # if it doesn't end with gpg, just encrypt and delete original.
+  # if the file ends with '.cleartext', dont worry about encrypting it.
   for secret in $(find "${dir}" -maxdepth 1 -name '.git' -prune -o \( -type f -a -not -name '*.gpg' -a -not -name 'gpgp-role' \) -print) ; do
     echo "+   ${secret}"
-    if [[ "${dry_run}" == "false" ]]; then
+
+    if [[ "${dry_run}" == "true" ]]; then
+      continue
+    fi
+
+    if [[ "${secret}" != *.cleartext ]]; then
       gpgp -o '--batch --yes' "${role}" "${secret}"
       rm -v "${secret}"
     fi

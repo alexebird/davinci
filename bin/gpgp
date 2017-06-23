@@ -6,36 +6,36 @@
 #
 
 set -euo pipefail
-set -x
+[ -n "${GPGP_VERBOSE:-}" ] && set -x
 
 GPG='gpg'
 
-_gpgp_role_path() {
+gpgp::role_path() {
   echo "${DAVINCI_GPGP_PATH}/gpg/roles/${1:-}"
 }
 
-_gpgp_pub_key_path() {
+gpgp::pub_key_path() {
   echo "${DAVINCI_GPGP_PATH}/gpg/public/${1:-}"
 }
 
-_gpgp_secrets_path() {
+gpgp::secrets_path() {
   echo "${DAVINCI_GPGP_SECRETS_PATH}/${1:-}"
 }
 
-_gpgp_ls_roles() {
-  find "$(_gpgp_role_path)" -type f -printf '%f\n' | sort
+gpgp::ls_roles() {
+  find "$(gpgp::role_path)" -type f -printf '%f\n' | sort
 }
 
-_gpgp_is_role() {
-  _gpgp_ls_roles | grep -qP "^${1}$"
+gpgp::is_role() {
+  gpgp::ls_roles | grep -qP "^${1}$"
 }
 
-_gpgp_match_pub_key() {
+gpgp::match_pub_key() {
   local thing="${1}"
-  find "$(_gpgp_pub_key_path)" -type f -printf '%f\n' | grep -q "${thing}"
+  find "$(gpgp::pub_key_path)" -type f -printf '%f\n' | grep -q "${thing}"
 }
 
-_gpgp_is_comment() {
+gpgp::is_comment() {
   local thing="${1}"
   [[ "${thing}" == '#'* ]]
 }
@@ -43,7 +43,7 @@ _gpgp_is_comment() {
 #
 # Recursively flatten roles into a list of the public key files.
 #
-_gpgp_flatten_role() {
+gpgp::flatten_role() {
   local role="${1:?must pass role}" ; shift
   local level="${1:?must pass level}" ; shift
   local verbose="${1:-false}" ; shift
@@ -55,7 +55,7 @@ _gpgp_flatten_role() {
     padding+="${one_padding}"
   done
 
-  if ! _gpgp_is_role "${role}"; then
+  if ! gpgp::is_role "${role}"; then
     >&2 echo "couldn't find role: ${role}"
     exit 1
   fi
@@ -64,21 +64,21 @@ _gpgp_flatten_role() {
     echo "${padding}role: ${role}"
   fi
 
-  local role_path="$(_gpgp_role_path "${role}")"
+  local role_path="$(gpgp::role_path "${role}")"
   local role_contents="$(cat "${role_path}")"
 
   for e in ${role_contents}; do
-    if _gpgp_is_comment "${e}"; then
+    if gpgp::is_comment "${e}"; then
       continue
     fi
 
-    if _gpgp_is_role "${e}"; then
-      _gpgp_flatten_role "${e}" "$((level + 1))" "${verbose}"
-    elif _gpgp_match_pub_key "${e}"; then
+    if gpgp::is_role "${e}"; then
+      gpgp::flatten_role "${e}" "$((level + 1))" "${verbose}"
+    elif gpgp::match_pub_key "${e}"; then
       if [[ "${verbose}" == "true" ]]; then
         echo "${padding}${one_padding}${e}"
       else
-        _gpgp_get_id_from_key_fname "${e}"
+        gpgp::get_id_from_key_fname "${e}"
       fi
     else
       >&2 echo "${e} is not a role or public key"
@@ -90,7 +90,7 @@ _gpgp_flatten_role() {
   fi
 }
 
-_gpgp_get_id_from_key_fname() {
+gpgp::get_id_from_key_fname() {
   local fname="$1"
   echo "${fname}" | sed -n -e's/.*id:\([0-9A-Z]\+\).*/\1/p'
 }
@@ -110,9 +110,9 @@ _join() {
   done
 }
 
-_gpgp_recipients_list_from_role() {
+gpgp::recipients_list_from_role() {
   local role="${1}"
-  local recips="$(_gpgp_flatten_role "${role}" 0 false)"
+  local recips="$(gpgp::flatten_role "${role}" 0 false)"
   if [[ -n "${recips}" ]]; then
     echo "-r $(_join ' -r ' ${recips})"
   else
@@ -120,12 +120,12 @@ _gpgp_recipients_list_from_role() {
   fi
 }
 
-_gpgp_recipients_list_from_roles() {
+gpgp::recipients_list_from_roles() {
   local list=''
   local recips
 
   for role in "$@"; do
-    recips="$(_gpgp_recipients_list_from_role "${role}")"
+    recips="$(gpgp::recipients_list_from_role "${role}")"
 
     if [[ "$?" != "0" ]]; then
       return 1
@@ -141,20 +141,20 @@ _gpgp_recipients_list_from_roles() {
   echo "${list}"
 }
 
-_gpgp_validate_roles() {
+gpgp::validate_roles() {
   local roles="$@"
   for role in "$@"; do
-    if ! _gpgp_is_role "${role}"; then
+    if ! gpgp::is_role "${role}"; then
       >&2 echo "couldn't find role: ${role}"
       exit 1
     fi
   done
 }
 
-_gpgp_cmd_recips() {
+gpgp::cmd_recips() {
   local roles="$@"
   local recips
-  recips="$(_gpgp_recipients_list_from_roles ${roles})"
+  recips="$(gpgp::recipients_list_from_roles ${roles})"
   if [[ "$?" != "0" ]]; then
     return 1
   else
@@ -162,16 +162,16 @@ _gpgp_cmd_recips() {
   fi
 }
 
-_gpgp_cmd_ls() {
+gpgp::cmd_ls() {
   local verbose="$1" ; shift
   local roles="$@"
 
   for role in "$@"; do
-    _gpgp_flatten_role "${role}" 0 "${verbose}"
+    gpgp::flatten_role "${role}" 0 "${verbose}"
   done
 }
 
-_gpgp_cmd_import() {
+gpgp::cmd_import() {
   local dry_run='false'
 
   while getopts "hn" opt; do
@@ -200,8 +200,8 @@ HERE
   done
 
   # these are the key ids we want to end up having imported at the end of the process.
-  local desired_keys="$(_gpgp_cmd_ls false $(_gpgp_ls_roles) | sort | uniq)"
-  echo "$(_gpgp_cmd_ls false $(_gpgp_ls_roles) | sort | uniq)"
+  local desired_keys="$(gpgp::cmd_ls false $(gpgp::ls_roles) | sort | uniq)"
+  echo "$(gpgp::cmd_ls false $(gpgp::ls_roles) | sort | uniq)"
 
   # get currently imported public keys for the owner's domains
   local current_keys=$(
@@ -233,7 +233,7 @@ HERE
   local cmd
 
   if [[ -n "${desired_regex}" ]]; then
-    for f in $(find "$(_gpgp_pub_key_path)" -type f -name '*.pub' | grep -P "${desired_regex}") ; do
+    for f in $(find "$(gpgp::pub_key_path)" -type f -name '*.pub' | grep -P "${desired_regex}") ; do
       cmd="${GPG} --import ${f}"
       echo "${cmd}"
       if [[ "${dry_run}" != "true" ]]; then
@@ -257,7 +257,7 @@ HERE
   done
 }
 
-_gpgp_cmd_encrypt() {
+gpgp::cmd_encrypt() {
   local gpg_opts=''
   local rm_orig='false'
 
@@ -308,16 +308,16 @@ HERE
   #if [[ -t 1 ]] || [[ "${file}" == '-' ]]; then
   if [[ "${file}" == '-' ]]; then
     # read from stdin, write to stdout
-    _gpgp_validate_roles ${roles}
-    cat - | "${GPG}" ${gpg_opts}-a -e $(_gpgp_cmd_recips ${roles}) -o-
+    gpgp::validate_roles ${roles}
+    cat - | "${GPG}" ${gpg_opts}-a -e $(gpgp::cmd_recips ${roles}) -o-
 
   # if a file is passed as the last arg, encrypt it.
   elif [[ -f "${file}" ]]; then
     # remove the file from the list of args so we are only left with a list of roles
     unset 'roles[${#roles[@]}-1]'
     outf=''
-    _gpgp_validate_roles ${roles}
-    "${GPG}" ${gpg_opts}-e $(_gpgp_cmd_recips ${roles}) "${file}"
+    gpgp::validate_roles ${roles}
+    "${GPG}" ${gpg_opts}-e $(gpgp::cmd_recips ${roles}) "${file}"
 
     if [[ "${rm_orig}" == "true" ]]; then
       echo "encrypted '${file}' -> '${file}.gpg'"
@@ -329,7 +329,7 @@ HERE
   fi
 }
 
-_gpgp_secrets_find_role_file() {
+gpgp::secrets_find_role_file() {
   local dir="${1:?must pass dir}" ; shift
   local orig_dir="${dir}"
   local role_file
@@ -360,11 +360,11 @@ _gpgp_secrets_find_role_file() {
 
 # The assumption is that the secrets dir is versioned, so this can do potentially
 # destructive actions.
-_gpgp_secrets_reencrypt_dir() {
+gpgp::secrets_reencrypt_dir() {
   local dir="${1:?must pass dir}" ; shift
   local dry_run="${1:-false}" ; shift
 
-  local role_file="$(_gpgp_secrets_find_role_file "${dir}")"
+  local role_file="$(gpgp::secrets_find_role_file "${dir}")"
   # if there's no role file, check if dir only has dirs in it, meaning
   # there are no secrets in dir to protect from not being encrypted.
   if [[ -z "${role_file}" ]]; then
@@ -384,7 +384,7 @@ _gpgp_secrets_reencrypt_dir() {
     return 1
   fi
 
-  _gpgp_validate_roles ${role}
+  gpgp::validate_roles ${role}
   echo "dir:  ${dir}"
   echo "role: ${role} (${role_file})"
 
@@ -412,7 +412,7 @@ _gpgp_secrets_reencrypt_dir() {
   done
 }
 
-_gpgp_cmd_add-key() {
+gpgp::cmd_add-key() {
   local dry_run='false'
 
   while getopts "hn" opt; do
@@ -446,7 +446,7 @@ HERE
 
   shift $(($OPTIND - 1))
 
-  local new_tmp="$(_gpgp_pub_key_path '_tmp-new.pub')"
+  local new_tmp="$(gpgp::pub_key_path '_tmp-new.pub')"
   cat - > "${new_tmp}"
 
   if ! grep -q 'BEGIN PGP PUBLIC KEY BLOCK' "${new_tmp}"; then
@@ -469,15 +469,15 @@ HERE
     echo "key fname: ${key_fname}"
     echo "role name: ${role_name}"
   else
-    mv -f "${new_tmp}" "$(_gpgp_pub_key_path "${key_fname}")"
-    echo "${key_fname}" > "$(_gpgp_role_path "${role_name}")"
+    mv -f "${new_tmp}" "$(gpgp::pub_key_path "${key_fname}")"
+    echo "${key_fname}" > "$(gpgp::role_path "${role_name}")"
     if ! grep -q "${key_id_long}" "${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt"; then
       echo "${key_id_long}:6:" >> "${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt"
     fi
   fi
 }
 
-_gpgp_cmd_reencrypt() {
+gpgp::cmd_reencrypt() {
   local dry_run='false'
   local secrets_path
 
@@ -527,21 +527,21 @@ HERE
   # try to do a dry run first
   echo "checking for roles"
   echo "=================="
-  if _gpgp_cmd_reencrypt_dirs 'true' "${secrets_path}"; then
+  if gpgp::cmd_reencrypt_dirs 'true' "${secrets_path}"; then
     echo "check passed. ready to encrypt."
     echo
 
     if [[ "${dry_run}" == 'false' ]]; then
       echo "re-encrypting secrets"
       echo "====================="
-      _gpgp_cmd_reencrypt_dirs 'false' "${secrets_path}"
+      gpgp::cmd_reencrypt_dirs 'false' "${secrets_path}"
     fi
   else
     echo "check failed. no encryption was done."
   fi
 }
 
-_gpgp_cmd_find-secrets() {
+gpgp::cmd_find-secrets() {
   local search_terms="$@"
   local grep_pattern=''
 
@@ -556,23 +556,23 @@ _gpgp_cmd_find-secrets() {
   eval find "${DAVINCI_GPGP_SECRETS_PATH}" -type f -name '*.gpg' ${grep_pattern}
 }
 
-_gpgp_cmd_reencrypt_dirs() {
+gpgp::cmd_reencrypt_dirs() {
   local dry_run="$1" ; shift
   local secrets_path="$1" ; shift
   for dir in $(find "${secrets_path}" -name '.git' -prune -o -type d -print) ; do
-    _gpgp_secrets_reencrypt_dir "${dir}" "${dry_run}" || return 1
+    gpgp::secrets_reencrypt_dir "${dir}" "${dry_run}" || return 1
     echo
   done
 }
 
-#_gpgp_roles_completer() {
-  #_gpgp_ls_roles
+#gpgp::roles_completer() {
+  #gpgp::ls_roles
   #echo
 #}
 
 #complete -F _gpgp_roles_completer _gpgp_recipients_list
 
-_gpgp_usage() {
+gpgp::usage() {
   cat <<HERE
 gpgp ROLES...
 
@@ -614,7 +614,7 @@ main() {
   local cmd="${1:-}"
 
   if [[ -z "${cmd}" ]]; then
-    _gpgp_usage
+    gpgp::usage
     exit 1
   fi
 
@@ -622,50 +622,50 @@ main() {
     recips)
       shift
       local roles="$@"
-      _gpgp_validate_roles ${roles}
-      _gpgp_cmd_recips ${roles}
+      gpgp::validate_roles ${roles}
+      gpgp::cmd_recips ${roles}
       ;;
 
     ls)
       shift
       local roles="$@"
-      _gpgp_validate_roles ${roles}
+      gpgp::validate_roles ${roles}
 
       if [[ -z "${roles}" ]]; then
-        roles="$(_gpgp_ls_roles)"
+        roles="$(gpgp::ls_roles)"
       fi
 
-      _gpgp_cmd_ls true ${roles}
+      gpgp::cmd_ls true ${roles}
       ;;
 
     import)
       shift
-      _gpgp_cmd_import "$@"
+      gpgp::cmd_import "$@"
       ;;
 
     add-key)
       shift
-      _gpgp_cmd_add-key "$@"
+      gpgp::cmd_add-key "$@"
       ;;
 
     find-secrets)
       shift
-      _gpgp_cmd_find-secrets "$@"
+      gpgp::cmd_find-secrets "$@"
       ;;
 
     reencrypt)
       shift
-      _gpgp_cmd_reencrypt "$@"
+      gpgp::cmd_reencrypt "$@"
       ;;
 
     encrypt)
       shift
-      _gpgp_cmd_encrypt "$@"
+      gpgp::cmd_encrypt "$@"
       ;;
 
     # default is to encrypt a file or stdin
     *)
-      _gpgp_cmd_encrypt "$@"
+      gpgp::cmd_encrypt "$@"
       ;;
 
   esac

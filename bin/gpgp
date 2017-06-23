@@ -305,7 +305,8 @@ HERE
   fi
 
   # if no existing file is passed as the last arg, read from stdin, ascii armor, write to stdout.
-  if [[ -t 1 ]] || [[ "${file}" == '-' ]]; then
+  #if [[ -t 1 ]] || [[ "${file}" == '-' ]]; then
+  if [[ "${file}" == '-' ]]; then
     # read from stdin, write to stdout
     _gpgp_validate_roles ${roles}
     cat - | "${GPG}" ${gpg_opts}-a -e $(_gpgp_cmd_recips ${roles}) -o-

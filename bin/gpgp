@@ -94,6 +94,18 @@ gpgp::flatten_role() (set -euo pipefail
     padding+="${one_padding}"
   done
 
+  if gpgp::is_pub_key_auto_role "${role}"; then
+    local key_id="$(gpgp::get_id_from_auto_role "${role}")"
+
+    if [[ "${verbose}" == "true" ]]; then
+      echo "${padding}${role} (${key_id})"
+    else
+      echo "${key_id}"
+    fi
+
+    return 0
+  fi
+
   if ! gpgp::is_role "${role}"; then
     echo "couldn't find role: ${role}"
     return 2
@@ -111,18 +123,10 @@ gpgp::flatten_role() (set -euo pipefail
       continue
     fi
 
-    if gpgp::is_role "${e}"; then
+    if gpgp::is_role "${e}" || gpgp::is_pub_key_auto_role "${e}"; then
       gpgp::flatten_role "${e}" "$((output_indent_level + 1))" "${verbose}"
-    elif gpgp::is_pub_key_auto_role "${e}"; then
-      local key_id="$(gpgp::get_id_from_auto_role "${e}")"
-
-      if [[ "${verbose}" == "true" ]]; then
-        echo "${padding}${one_padding}${e} (${key_id})"
-      else
-        echo "${key_id}"
-      fi
     else
-      echo "${e} is not a role or public key"
+      echo "${e} is not a role"
       return 2
     fi
   done
@@ -571,7 +575,7 @@ gpgp::cmd_reencrypt_dirs() {
 gpgp::validate_roles() {
   local roles="$@"
   for role in "$@"; do
-    if ! gpgp::is_role "${role}"; then
+    if ! gpgp::is_role "${role}" && ! gpgp::is_pub_key_auto_role "${role}" ; then
       >&2 echo "couldn't find role: ${role}"
       exit 1
     fi

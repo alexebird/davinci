@@ -74,6 +74,10 @@ gpgp::get_id_from_auto_role() {
   gpgp::get_id_from_key_fname "${fname}"
 }
 
+gpgp::ls_auto_roles() {
+  gpgp::ls_pub_keys | grep -oP "^.+(?=@)"
+}
+
 
 #
 # Recursively flatten roles into a list of the public key files.
@@ -621,11 +625,21 @@ gpgp::assert_gpgp_config() {
   return 0
 }
 
-# TODO dont let a role be the same string that a pubkey starts with
-# TODO always encrypt with admins
+# TODO always reencrypt with admins
+# TODO dont allow for circular deps in role hierarchy
 gpgp::assert_roles_valid() {
   local roles="$(gpgp::ls_roles)"
 
+  # check to make sure no roles exist which collide with auto-roles.
+  for r in $(gpgp::ls_roles); do
+    if echo "${r}" | grep -P "$(_join '|' $(gpgp::ls_auto_roles))" ; then
+      echo "error: the role '${r}' has the same name as the public key '$(gpgp::ls_pub_keys | grep "${r}")'"
+      return 1
+    fi
+  done
+
+
+  # check to make sure that all roles mentioned in other roles are, in fact, roles.
   local output
   local rv='0'
 

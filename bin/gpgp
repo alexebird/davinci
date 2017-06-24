@@ -132,51 +132,22 @@ gpgp::flatten_role() (set -euo pipefail
   fi
 )
 
-gpgp::recipients_list_from_role() {
-  local role="${1}"
-  local recips="$(gpgp::flatten_role "${role}" 0 false)"
-  if [[ -n "${recips}" ]]; then
-    echo "-r $(_join ' -r ' ${recips})"
-  else
-    return 1
-  fi
-}
-
 gpgp::recipients_list_from_roles() {
-  local list=''
-  local recips
-
-  for role in "$@"; do
-    recips="$(gpgp::recipients_list_from_role "${role}")"
-
-    if [[ "$?" != "0" ]]; then
-      return 1
-    fi
-
-    if [[ -z "${list}" ]]; then
-      list="${recips}"
-    else
-      list="${list} ${recips}"
-    fi
-  done
-
-  echo "${list}"
-}
-
-gpgp::validate_roles() {
   local roles="$@"
-  for role in "$@"; do
-    if ! gpgp::is_role "${role}"; then
-      >&2 echo "couldn't find role: ${role}"
-      exit 1
-    fi
-  done
+  local key_ids="$(gpgp::cmd_ls false ${roles} | sort | uniq)"
+
+  if [[ -n "${key_ids}" ]]; then
+    echo "-r $(_join ' -r ' ${key_ids})"
+  else
+    echo "error: did you want some roles?"
+    exit 1
+  fi
 }
 
 gpgp::cmd_recips() {
   local roles="$@"
-  local recips
-  recips="$(gpgp::recipients_list_from_roles ${roles})"
+  local recips="$(gpgp::recipients_list_from_roles ${roles})"
+
   if [[ "$?" != "0" ]]; then
     return 1
   else
@@ -414,8 +385,8 @@ gpgp::secrets_reencrypt_dir() {
       # dont ever write the unencrypted secret to disk when reencrypting.
       cat "${secret}" \
         | "${GPG}" -d -o- \
-        | "${GPG}" -e $(gpgp recips ${role}) -o"${tmp_secret}" \
-        && mv "${tmp_secret}" "${secret}"
+        | "${GPG}" -e $(gpgp::cmd_recips ${role} admin) -o"${tmp_secret}"
+      mv "${tmp_secret}" "${secret}"
     fi
   done
 
@@ -596,6 +567,16 @@ gpgp::cmd_reencrypt_dirs() {
 #}
 
 #complete -F _gpgp_roles_completer _gpgp_recipients_list
+
+gpgp::validate_roles() {
+  local roles="$@"
+  for role in "$@"; do
+    if ! gpgp::is_role "${role}"; then
+      >&2 echo "couldn't find role: ${role}"
+      exit 1
+    fi
+  done
+}
 
 gpgp::usage() {
   cat <<HERE

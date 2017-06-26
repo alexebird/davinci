@@ -96,6 +96,18 @@ gpgp::flatten_role() (set -euo pipefail
     padding+="${one_padding}"
   done
 
+  if gpgp::is_pub_key "${role}"; then
+    local key_id="$(gpgp::get_id_from_key_fname "${role}")"
+
+    if [[ "${verbose}" == "true" ]]; then
+      echo "${padding}${role} (${key_id})"
+    else
+      echo "${key_id}"
+    fi
+
+    return 0
+  fi
+
   if gpgp::is_pub_key_auto_role "${role}"; then
     local key_id="$(gpgp::get_id_from_auto_role "${role}")"
 
@@ -125,7 +137,7 @@ gpgp::flatten_role() (set -euo pipefail
       continue
     fi
 
-    if gpgp::is_role "${e}" || gpgp::is_pub_key_auto_role "${e}"; then
+    if gpgp::is_role "${e}" || gpgp::is_pub_key_auto_role "${e}" || gpgp::is_pub_key "${e}" ; then
       gpgp::flatten_role "${e}" "$((output_indent_level + 1))" "${verbose}"
     else
       echo "${e} is not a role"
@@ -619,7 +631,6 @@ gpgp::assert_gpgp_config() {
   return 0
 }
 
-# TODO always reencrypt with admins
 # TODO dont allow for circular deps in role hierarchy
 gpgp::assert_roles_valid() {
   local roles="$(gpgp::ls_roles)"

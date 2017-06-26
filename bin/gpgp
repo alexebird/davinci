@@ -6,6 +6,8 @@
 #
 
 set -euo pipefail
+. "${DAVINCI_CLONE}/sh/01-colors.sh"
+
 [ -n "${GPGP_VERBOSE:-}" ] && set -x
 
 GPG='gpg'
@@ -112,7 +114,7 @@ gpgp::flatten_role() (set -euo pipefail
   fi
 
   if [[ "${verbose}" == "true" ]]; then
-    echo "${padding}role: ${role}"
+    echo "${padding}role: ${role} ($(gpgp::role_path "${role}"))"
   fi
 
   local role_path="$(gpgp::role_path "${role}")"
@@ -293,7 +295,7 @@ HERE
   shift $(($OPTIND - 1))
 
   # convert roles to an array
-  local roles=( $@ )
+  local roles=( "$@" )
 
   # convention: the last arg is the file to encrypt
   local file="${roles[${#roles[@]}-1]}"
@@ -314,8 +316,8 @@ HERE
     # remove the file from the list of args so we are only left with a list of roles
     unset 'roles[${#roles[@]}-1]'
     outf=''
-    gpgp::validate_roles ${roles}
-    "${GPG}" ${gpg_opts}-e $(gpgp::cmd_recips ${roles}) "${file}"
+    gpgp::validate_roles ${roles[@]}
+    "${GPG}" ${gpg_opts}-e $(gpgp::cmd_recips ${roles[@]}) "${file}"
 
     if [[ "${rm_orig}" == "true" ]]; then
       echo "encrypted '${file}' -> '${file}.gpg'"
@@ -375,21 +377,21 @@ gpgp::secrets_reencrypt_dir() {
   fi
 
   local role="$(echo "${role_file}" | grep --color=never -oP '(?<=:).*')"
+  local roles="${role} admin"
 
-  gpgp::validate_roles ${role}
-  echo "dir:  ${dir}"
-  echo "role: ${role} (${role_file})"
+  gpgp::validate_roles ${roles}
 
   # if it ends with gpg, re-encrypt.
   for secret in $(find "${dir}" -maxdepth 1 -type f -name '*.gpg') ; do
-    echo "+/- ${secret}"
+    echo -e "${COLOR_YELLOW}+/- reencrypting${COLOR_RESET} ${secret}"
+
     if [[ "${dry_run}" == "false" ]]; then
       local tmp_secret="${secret/%gpg/__new.gpg}"
       rm -f "${tmp_secret}"
       # dont ever write the unencrypted secret to disk when reencrypting.
       cat "${secret}" \
         | "${GPG}" -d -o- \
-        | "${GPG}" -e $(gpgp::cmd_recips ${role} admin) -o"${tmp_secret}"
+        | "${GPG}" -e $(gpgp::cmd_recips ${roles}) -o"${tmp_secret}"
       mv "${tmp_secret}" "${secret}"
     fi
   done
@@ -397,17 +399,22 @@ gpgp::secrets_reencrypt_dir() {
   # if it doesn't end with gpg, just encrypt and delete original.
   # if the file ends with '.cleartext', dont worry about encrypting it.
   for secret in $(find "${dir}" -maxdepth 1 -name '.git' -prune -o \( -type f -a -not -name '*.gpg' -a -not -name 'gpgp-role:*' \) -print) ; do
-    echo "+   ${secret}"
+    echo -e "${COLOR_GREEN}+ encrypting${COLOR_RESET} ${secret} -> ${secret}.gpg"
 
     if [[ "${dry_run}" == "true" ]]; then
       continue
     fi
 
     if [[ "${secret}" != *.cleartext ]]; then
-      gpgp -o '--batch --yes' "${role}" "${secret}"
+      gpgp::cmd_encrypt -o '--batch --yes' ${roles} "${secret}"
       rm -v "${secret}"
     fi
   done
+
+  {
+    echo -e "\ndir:  ${dir}\n"
+    gpgp::cmd_ls true ${roles}
+  } | sed -e's/^/    /'
 }
 
 gpgp::cmd_add-key() {
@@ -525,6 +532,7 @@ HERE
   # try to do a dry run first
   echo "checking for roles"
   echo "=================="
+  echo
   if gpgp::cmd_reencrypt_dirs 'true' "${secrets_path}"; then
     echo "check passed. ready to encrypt."
     echo
@@ -532,6 +540,7 @@ HERE
     if [[ "${dry_run}" == 'false' ]]; then
       echo "re-encrypting secrets"
       echo "====================="
+      echo
       gpgp::cmd_reencrypt_dirs 'false' "${secrets_path}"
     fi
   else

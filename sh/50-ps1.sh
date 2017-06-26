@@ -58,7 +58,7 @@ _aws_env_ps1() {
     if [[ "${AWS_ENV}" == "prod" ]] ; then
       case "$(_lib_current_shell)" in
         bash)
-          echo "${COLOR_YELLOW}(a:${COLOR_YELLOW}${AWS_ENV}${COLOR_RED}!${COLOR_YELLOW})${COLOR_RESET}"
+          echo "${PROMPT_COLOR_YELLOW}(a:${PROMPT_COLOR_YELLOW}${AWS_ENV}${PROMPT_COLOR_RED}!${PROMPT_COLOR_YELLOW})${PROMPT_COLOR_RESET}"
           ;;
         zsh)
           echo "%{%F{yellow}%}(a:${AWS_ENV}%{%F{red}%}!%{%F{yellow}%})%{%f%}"
@@ -67,7 +67,7 @@ _aws_env_ps1() {
     else
       case "$(_lib_current_shell)" in
         bash)
-          echo "${COLOR_YELLOW}(a:${AWS_ENV})${COLOR_RESET}"
+          echo "${PROMPT_COLOR_YELLOW}(a:${AWS_ENV})${PROMPT_COLOR_RESET}"
           ;;
         zsh)
           echo "%{%F{yellow}%}(a:${AWS_ENV})%{%f%}"
@@ -84,7 +84,7 @@ _nomad_env_ps1() {
       if [[ -n "${pids}" ]]; then
         case "$(_lib_current_shell)" in
           bash)
-            echo "${COLOR_BLUE}(n:${NOMAD_ENV}${COLOR_RED}!${COLOR_BLUE})${COLOR_RESET}"
+            echo "${PROMPT_COLOR_BLUE}(n:${NOMAD_ENV}${PROMPT_COLOR_RED}!${PROMPT_COLOR_BLUE})${PROMPT_COLOR_RESET}"
             ;;
           zsh)
             echo "%F{blue}(n:${NOMAD_ENV}%F{red}!%F{blue})%f"
@@ -93,7 +93,7 @@ _nomad_env_ps1() {
       else
         case "$(_lib_current_shell)" in
           bash)
-            echo "${COLOR_BLUE}(n:${COLOR_RED}${NOMAD_ENV}${COLOR_RED}!${COLOR_BLUE})${COLOR_RESET}"
+            echo "${PROMPT_COLOR_BLUE}(n:${PROMPT_COLOR_RED}${NOMAD_ENV}${PROMPT_COLOR_RED}!${PROMPT_COLOR_BLUE})${PROMPT_COLOR_RESET}"
             ;;
           zsh)
             echo "%F{blue}(n:%F{red}${NOMAD_ENV}!%F{blue})%f"
@@ -104,7 +104,7 @@ _nomad_env_ps1() {
       if [[ -n "${pids}" ]]; then
         case "$(_lib_current_shell)" in
           bash)
-            echo "${COLOR_BLUE}(n:${NOMAD_ENV})${COLOR_RESET}"
+            echo "${PROMPT_COLOR_BLUE}(n:${NOMAD_ENV})${PROMPT_COLOR_RESET}"
             ;;
           zsh)
             echo "%F{blue}(n:${NOMAD_ENV}%F{blue})%f"
@@ -113,7 +113,7 @@ _nomad_env_ps1() {
       else
         case "$(_lib_current_shell)" in
           bash)
-            echo "${COLOR_BLUE}(n:${COLOR_RED}${NOMAD_ENV}${COLOR_BLUE})${COLOR_RESET}"
+            echo "${PROMPT_COLOR_BLUE}(n:${PROMPT_COLOR_RED}${NOMAD_ENV}${PROMPT_COLOR_BLUE})${PROMPT_COLOR_RESET}"
             ;;
           zsh)
             echo "%F{blue}(n:%F{red}${NOMAD_ENV}%F{blue})%f"
@@ -129,7 +129,7 @@ _ovpn_tb_ps1() {
   if [[ -n "${vpns}" ]]; then
     case "$(_lib_current_shell)" in
       bash)
-        echo "${COLOR_LIGHT_RED}(v:${vpns})${COLOR_RESET}"
+        echo "${PROMPT_COLOR_LIGHT_RED}(v:${vpns})${PROMPT_COLOR_RESET}"
         ;;
       zsh)
         echo "%F{red}%S%B(v:${vpns})%b%s%f"
@@ -145,7 +145,7 @@ _ovpn_native_ps1() {
   if [[ -n "${vpns}" ]]; then
     case "$(_lib_current_shell)" in
       bash)
-        echo "${COLOR_LIGHT_RED}(v:${vpns})${COLOR_RESET}"
+        echo "${PROMPT_COLOR_LIGHT_RED}(v:${vpns})${PROMPT_COLOR_RESET}"
         ;;
       zsh)
         echo "%F{red}%S%B(v:${vpns})%b%s%f"
@@ -156,26 +156,26 @@ _ovpn_native_ps1() {
 
 _git_color_ps1() {
   if test $(git status 2> /dev/null | grep -c :) -eq 0; then
-    echo "${COLOR_GREEN}$(__git_ps1)${COLOR_RESET}"
+    echo "${PROMPT_COLOR_GREEN}$(__git_ps1)${PROMPT_COLOR_RESET}"
   else
-    echo "${COLOR_RED}$(__git_ps1)${COLOR_RESET}"
+    echo "${PROMPT_COLOR_RED}$(__git_ps1)${PROMPT_COLOR_RESET}"
   fi
 }
 
 _davinci_env_ps1() {
   local new_ps1
-  local parens_color="${COLOR_LIGHT_GREEN}"
-  local env_color="${COLOR_LIGHT_GREEN}"
-  local sensitive_env_color="${COLOR_RED_HL}"
-  local somewhat_sensitive_env_color="${COLOR_YELLOW_HL}"
-  local vpn_color="${COLOR_PURPLE}"
-  local aws_color="${COLOR_YELLOW}"
-  local do_color="${COLOR_BLUE}"
+  local parens_color="${PROMPT_COLOR_LIGHT_GREEN}"
+  local env_color="${PROMPT_COLOR_LIGHT_GREEN}"
+  local sensitive_env_color="${PROMPT_COLOR_RED_HL}"
+  local somewhat_sensitive_env_color="${PROMPT_COLOR_YELLOW_HL}"
+  local vpn_color="${PROMPT_COLOR_PURPLE}"
+  local aws_color="${PROMPT_COLOR_YELLOW}"
+  local do_color="${PROMPT_COLOR_BLUE}"
 
   # empty prompt section if env isnt set
   if [[ -z "${DAVINCI_ENV}" ]] ; then
     if [[ "$(ps -ef | grep 'openvpn --config' | grep -v grep | wc -l)" != "0" ]]; then
-      echo "${parens_color}(${vpn_color}v${parens_color})${COLOR_RESET}"
+      echo "${parens_color}(${vpn_color}v${parens_color})${PROMPT_COLOR_RESET}"
     else
       echo
     fi
@@ -203,5 +203,5 @@ _davinci_env_ps1() {
      new_ps1="${new_ps1}${vpn_color}v"
   fi
 
-  echo "${parens_color}(${new_ps1}${parens_color})${COLOR_RESET}"
+  echo "${parens_color}(${new_ps1}${parens_color})${PROMPT_COLOR_RESET}"
 }

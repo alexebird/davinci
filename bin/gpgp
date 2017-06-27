@@ -569,7 +569,7 @@ gpgp::cmd_find-secrets() {
   done
 
   if [[ -n "${grep_pattern}" ]]; then
-    grep_pattern=" | grep --color=always -iP ${grep_pattern}"
+    grep_pattern=" | grep --color=auto -iP ${grep_pattern}"
   fi
 
   eval find "${DAVINCI_GPGP_SECRETS_PATH}" -type f -name '*.gpg' ${grep_pattern}

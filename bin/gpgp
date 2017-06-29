@@ -96,8 +96,8 @@ gpgp::flatten_role() (set -euo pipefail
     padding+="${one_padding}"
   done
 
-  if gpgp::is_pub_key "${role}"; then
-    local key_id="$(gpgp::get_id_from_key_fname "${role}")"
+  if gpgp::is_pub_key_auto_role "${role}"; then
+    local key_id="$(gpgp::get_id_from_auto_role "${role}")"
 
     if [[ "${verbose}" == "true" ]]; then
       echo "${padding}${role} (${key_id})"
@@ -108,8 +108,9 @@ gpgp::flatten_role() (set -euo pipefail
     return 0
   fi
 
-  if gpgp::is_pub_key_auto_role "${role}"; then
-    local key_id="$(gpgp::get_id_from_auto_role "${role}")"
+  if gpgp::is_pub_key "${role}"; then
+    gpgp::get_id_from_key_fname "${role}"
+    local key_id="$(gpgp::get_id_from_key_fname "${role}")"
 
     if [[ "${verbose}" == "true" ]]; then
       echo "${padding}${role} (${key_id})"
@@ -254,8 +255,8 @@ HERE
     done
   fi
 
-  if [[ -s "${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt" ]]; then
-    "${GPG}" --import-ownertrust "${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt"
+  if [[ -s "${DAVINCI_GPGP_PATH}/gpgp/ownertrust.txt" ]]; then
+    "${GPG}" --import-ownertrust "${DAVINCI_GPGP_PATH}/gpgp/ownertrust.txt"
   fi
 
   for f in ${delete_keys} ; do
@@ -371,6 +372,11 @@ gpgp::secrets_find_role_file() {
 gpgp::secrets_reencrypt_dir() {
   local dir="${1:?must pass dir}" ; shift
   local dry_run="${1:-false}" ; shift
+  local any_secrets='f'
+
+  echo
+  echo '======================================'
+  echo -e "target dir:  ${dir}\n"
 
   local role_file="$(gpgp::secrets_find_role_file "${dir}")"
   # if there's no role file, check if `dir` has only other directories in it, meaning
@@ -392,10 +398,13 @@ gpgp::secrets_reencrypt_dir() {
   local roles="${role} admin"
 
   gpgp::validate_roles ${roles}
+  gpgp::cmd_ls true ${roles}
+  echo "files:"
 
   # if it ends with gpg, re-encrypt.
   for secret in $(find "${dir}" -maxdepth 1 -type f -name '*.gpg') ; do
-    echo -e "${COLOR_YELLOW}+/- reencrypting${COLOR_RESET} ${secret}"
+    any_secrets='t'
+    echo -e "  ${COLOR_YELLOW}+/- reencrypting${COLOR_RESET} ${secret}"
 
     if [[ "${dry_run}" == "false" ]]; then
       local tmp_secret="${secret/%gpg/__new.gpg}"
@@ -411,7 +420,13 @@ gpgp::secrets_reencrypt_dir() {
   # if it doesn't end with gpg, just encrypt and delete original.
   # if the file ends with '.cleartext', dont worry about encrypting it.
   for secret in $(find "${dir}" -maxdepth 1 -name '.git' -prune -o \( -type f -a -not -name '*.gpg' -a -not -name 'gpgp-role:*' \) -print) ; do
-    echo -e "${COLOR_GREEN}+ encrypting${COLOR_RESET} ${secret} -> ${secret}.gpg"
+    any_secrets='t'
+
+    if [[ "${secret}" == *.cleartext ]]; then
+      echo -e "  ${COLOR_LIGHT_BLUE}cleartext${COLOR_RESET} ${secret}"
+    else
+      echo -e "  ${COLOR_GREEN}+ encrypting${COLOR_RESET} ${secret} -> ${secret}.gpg"
+    fi
 
     if [[ "${dry_run}" == "true" ]]; then
       continue
@@ -423,10 +438,9 @@ gpgp::secrets_reencrypt_dir() {
     fi
   done
 
-  {
-    echo -e "\ndir:  ${dir}\n"
-    gpgp::cmd_ls true ${roles}
-  } | sed -e's/^/    /'
+  if [[ "${any_secrets}" == 'f' ]]; then
+    echo -e "  ${COLOR_LIGHT_PURPLE}no secrets in this dir${COLOR_RESET}"
+  fi
 }
 
 gpgp::cmd_add-key() {
@@ -474,22 +488,25 @@ HERE
   local key_fingerprint="$(gpg --with-fingerprint "${new_tmp}" 2>&1)"
 
   local key_id_short="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /^pub.+\/([0-9A-Z]+)/ && puts($1)')"
-  local role_name="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /\<(.+)@/ && puts($1)')"
+  #local role_name="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /\<(.+)@/ && puts($1)')"
   local key_size="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /^pub\s+([0-9A-Z]+)\// && puts($1)')"
   local email="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /\<(.+)\>/ && puts($1)')"
   local key_id_long="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /Key fingerprint = ([0-9A-Z ]+)$/ && puts($1.gsub(/\s+/, ""))')"
 
   local key_fname="${email}-${key_size}-id:${key_id_short}.pub"
 
+  cat <<HERE
+public key: ${key_fname}
+id:         ${key_id_long} (${key_id_short})
+size:       ${key_size}
+HERE
+
   if [[ "${dry_run}" == 'true' ]]; then
     rm -f "${new_tmp}"
-    echo "key fname: ${key_fname}"
-    echo "role name: ${role_name}"
   else
     mv -f "${new_tmp}" "$(gpgp::pub_key_path "${key_fname}")"
-    echo "${key_fname}" > "$(gpgp::role_path "${role_name}")"
-    if ! grep -q "${key_id_long}" "${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt"; then
-      echo "${key_id_long}:6:" >> "${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt"
+    if ! grep -q "${key_id_long}" "${DAVINCI_GPGP_PATH}/gpgp/ownertrust.txt"; then
+      echo "${key_id_long}:6:" >> "${DAVINCI_GPGP_PATH}/gpgp/ownertrust.txt"
     fi
   fi
 }

@@ -36,7 +36,7 @@ _ovpn_cmd_down() {
 _ovpn_cmd_reup() {
   local env="$1"
   _ovpn_cmd_down "${env}"
-  sleep 1
+  sleep 7
   _ovpn_cmd_up "${env}"
 }
 

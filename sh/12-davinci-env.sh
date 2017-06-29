@@ -2,6 +2,8 @@
 
 # davinci-env: all-encompassing virtual env for infrastructure
 
+GPG='gpg2'
+
 _help_davinci-env() {
   cat <<HERE
 Usage: ${1:?must pass cmdname} ENV
@@ -30,7 +32,7 @@ davinci-env::unset_at_path() {
   done
 
   for e in $(find "${path_}" -type f -name "*.sh.gpg" | sort); do
-    for v in $(gpg -d "${e}" | grep -h '^export' | sed -e's/^export //' -e's/=.\+$//'); do
+    for v in $(${GPG} -d "${e}" | grep -h '^export' | sed -e's/^export //' -e's/=.\+$//'); do
       unset "${v}"
     done
   done
@@ -63,7 +65,7 @@ davinci-env::source_sh_files() {
   done
 
   for f in $(find "${path_}" -type f -name '*.sh.gpg' | sort); do
-    . <(gpg -d "${f}")
+    . <(${GPG} -d "${f}")
   done
 }
 

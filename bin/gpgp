@@ -10,7 +10,7 @@ set -euo pipefail
 
 [ -n "${GPGP_VERBOSE:-}" ] && set -x
 
-GPG='gpg'
+GPG='gpg2'
 
 _join() {
   local joint="${1:-}"
@@ -485,7 +485,7 @@ HERE
     return 1
   fi
 
-  local key_fingerprint="$(gpg --with-fingerprint "${new_tmp}" 2>&1)"
+  local key_fingerprint="$(${GPG} --with-fingerprint "${new_tmp}" 2>&1)"
 
   local key_id_short="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /^pub.+\/([0-9A-Z]+)/ && puts($1)')"
   #local role_name="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /\<(.+)@/ && puts($1)')"

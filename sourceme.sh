@@ -1,6 +1,8 @@
 #!/bin/bash
 #set -x
 
+GPG='gpg2'
+
 _davinci_path_first_component() {
   _davinci_path_components | head -1
 }
@@ -32,7 +34,7 @@ _davinci_source_davinci_env_auto() {
     done
 
     for f in $(find ${DAVINCI_ENV_PATH}/auto/ -type f -name '*.sh.gpg' | sort); do
-      . <(gpg -d "${f}")
+      . <(${GPG} -d "${f}")
     done
   fi
 }

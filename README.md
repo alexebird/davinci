@@ -119,6 +119,17 @@ $ davinci-<tab><tab>
 davinci-env
 -----------
 
+### TODO docs
+
+1. global auto dir
+1. global vs project local
+  1. common dir
+1. .sh and .gpg
+1. subenvs
+  1. `DAVINCI_ENV_FULL`
+  1. `DAVINCI_SUBENV`
+1. parameterized
+
 Example:
 
 ```bash
@@ -171,6 +182,10 @@ Legend:
 
 gpgp
 ----
+
+### TODO docs
+
+1. auto-roles
 
 "gpg Plus"
 

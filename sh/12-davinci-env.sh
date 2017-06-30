@@ -20,56 +20,43 @@ Clears the environment of all exported vars setup by a previous call of davinci-
 HERE
 }
 
-davinci-env::unset_at_path() {
+davincienv::unset_at_path() {
   local path_="$1"
 
   if ! [[ -d "${path_}" ]]; then
+    #echo "davinci-env: unset: path doesn't exist '${path_}'"
     return 1
   fi
 
-  for v in $(find "${path_}" -type f -name "*.sh" | xargs grep -h '^export' | sed -e's/^export //' -e's/=.\+$//' | sort); do
+  for v in $(find "${path_}" -maxdepth 1 -type f -name "*.sh" | xargs grep -h '^export' | sed -e's/^export //' -e's/=.\+$//' | sort); do
     unset "${v}"
   done
 
-  for e in $(find "${path_}" -type f -name "*.sh.gpg" | sort); do
+  for e in $(find "${path_}" -maxdepth 1 -type f -name "*.sh.gpg" | sort); do
     for v in $(${GPG} -d "${e}" | grep -h '^export' | sed -e's/^export //' -e's/=.\+$//'); do
       unset "${v}"
     done
   done
 }
 
-davinci-davinci-env-unset() {
-  local global_common_dir="${DAVINCI_ENV_PATH}/common"
-  local global_env_dir="${DAVINCI_ENV_PATH}/${DAVINCI_ENV}"
-  local project_local_common_dir="$(davinci-env::local_git_env_path 'common')"
-  local project_local_env_dir="$(davinci-env::local_git_env_path "${DAVINCI_ENV}")"
+davincienv::source_sh_files() {
+  local path_="$1"
 
-  if [[ -z "${DAVINCI_ENV}" ]]; then
-    #echo "DAVINCI_ENV not set, exiting"
+  if ! [[ -d "${path_}" ]]; then
+    #echo "davinci-env: source: path doesn't exist '${path_}'"
     return 1
   fi
 
-  # unset all the exported vars
-  unset DAVINCI_ENV
-  davinci-env::unset_at_path "${global_env_dir}"
-  davinci-env::unset_at_path "${global_common_dir}"
-  davinci-env::unset_at_path "${project_local_env_dir}"
-  davinci-env::unset_at_path "${project_local_common_dir}"
-}
-
-davinci-env::source_sh_files() {
-  local path_="$1"
-
-  for f in $(find "${path_}" -type f -name '*.sh' | sort); do
+  for f in $(find "${path_}" -maxdepth 1 -type f -name '*.sh' | sort); do
     . "${f}"
   done
 
-  for f in $(find "${path_}" -type f -name '*.sh.gpg' | sort); do
+  for f in $(find "${path_}" -maxdepth 1 -type f -name '*.sh.gpg' | sort); do
     . <(${GPG} -d "${f}")
   done
 }
 
-davinci-env::local_git_env_path() {
+davincienv::local_git_env_path() {
   local env="$1"
   local current_git_root
   local project_local_env_dir
@@ -89,35 +76,78 @@ davinci-env::local_git_env_path() {
   fi
 }
 
-davinci-env::print_env() {
+davincienv::print_env() {
   if [[ -n "${DAVINCI_ENV}" ]]; then
-    echo "${DAVINCI_ENV}"
+    if [[ -n "${DAVINCI_SUBENV}" ]]; then
+      echo "${DAVINCI_ENV}-${DAVINCI_SUBENV}"
+    else
+      echo "${DAVINCI_ENV}"
+    fi
     return 0
   else
     return 1
   fi
 }
 
+davinci-davinci-env-unset() {
+  local global_common_dir="${DAVINCI_ENV_PATH}/common"
+  local global_env_dir="${DAVINCI_ENV_PATH}/${DAVINCI_ENV}"
+  local global_subenv_dir="${DAVINCI_ENV_PATH}/${DAVINCI_ENV}/${DAVINCI_SUBENV}"
+
+  local project_local_common_dir="$(davincienv::local_git_env_path 'common')"
+  local project_local_env_dir="$(davincienv::local_git_env_path "${DAVINCI_ENV}")"
+  local project_local_subenv_dir="$(davincienv::local_git_env_path "${DAVINCI_ENV}/${DAVINCI_SUBENV}")"
+
+  if [[ -z "${DAVINCI_ENV}" ]]; then
+    #echo "DAVINCI_ENV not set, exiting"
+    return 1
+  fi
+
+  # unset all the exported vars
+  unset DAVINCI_ENV_FULL
+  unset DAVINCI_SUBENV
+  unset DAVINCI_ENV
+  davincienv::unset_at_path "${global_subenv_dir}"
+  davincienv::unset_at_path "${global_env_dir}"
+  davincienv::unset_at_path "${global_common_dir}"
+
+  davincienv::unset_at_path "${project_local_subenv_dir}"
+  davincienv::unset_at_path "${project_local_env_dir}"
+  davincienv::unset_at_path "${project_local_common_dir}"
+}
+
 davinci-davinci-env() {
   _davinci_help_helper "$@" && return 0
   local new_env="${1:-}" ; shift
+  local new_subenv="${1:-}" ; shift
 
   # maybe print the current env
   if [[ -z "${new_env}" ]]; then
-    davinci-env::print_env
+    davincienv::print_env
     return $?
   fi
 
   # check if new_env exists
   local global_common_dir="${DAVINCI_ENV_PATH}/common"
   local global_env_dir="${DAVINCI_ENV_PATH}/${new_env}"
-  local project_local_common_dir="$(davinci-env::local_git_env_path 'common')"
-  local project_local_env_dir="$(davinci-env::local_git_env_path "${new_env}")"
+  local global_subenv_dir="${DAVINCI_ENV_PATH}/${new_env}/${new_subenv}"
+
+  local project_local_common_dir="$(davincienv::local_git_env_path 'common')"
+  local project_local_env_dir="$(davincienv::local_git_env_path "${new_env}")"
+  local project_local_subenv_dir="$(davincienv::local_git_env_path "${new_env}/${new_subenv}")"
 
   if ! [[ -d "${global_env_dir}" ]] && ! [[ -d "${project_local_env_dir}" ]]; then
-    echo "no davinci-env called '${new_env}'"
+    echo "davinci-env: no env called '${new_env}'"
     return 1
   fi
+
+  # dont care about checking the subenv, because the client may simply use DAVINCI_ENV_FULL if they want
+  #if [[ -n "${new_subenv}" ]]; then
+    #if ! [[ -d "${global_subenv_dir}" ]] && ! [[ -d "${project_local_subenv_dir}" ]]; then
+      #echo "davinci-env: no subenv called '${new_env}-${new_subenv}'"
+      #return 1
+    #fi
+  #fi
 
   # unset the previous env so that we don't have vars leftover
   davinci-davinci-env-unset
@@ -125,19 +155,19 @@ davinci-davinci-env() {
   # set the new env
   export DAVINCI_ENV="${new_env}"
 
-  if [[ -d "${global_common_dir}" ]]; then
-    davinci-env::source_sh_files "${global_common_dir}"
+  if [[ -n "${new_subenv}" ]]; then
+    export DAVINCI_SUBENV="${new_subenv}"
+    export DAVINCI_ENV_FULL="${new_env}-${new_subenv}"
+  else
+    export DAVINCI_ENV_FULL="${new_env}"
   fi
 
-  if [[ -d "${global_env_dir}" ]]; then
-    davinci-env::source_sh_files "${global_env_dir}"
-  fi
+  # source the env dirs
+  davincienv::source_sh_files "${global_common_dir}"
+  davincienv::source_sh_files "${global_env_dir}"
+  davincienv::source_sh_files "${global_subenv_dir}"
 
-  if [[ -d "${project_local_common_dir}" ]]; then
-    davinci-env::source_sh_files "${project_local_common_dir}"
-  fi
-
-  if [[ -d "${project_local_env_dir}" ]]; then
-    davinci-env::source_sh_files "${project_local_env_dir}"
-  fi
+  davincienv::source_sh_files "${project_local_common_dir}"
+  davincienv::source_sh_files "${project_local_env_dir}"
+  davincienv::source_sh_files "${project_local_subenv_dir}"
 }

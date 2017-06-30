@@ -67,6 +67,9 @@ davinci-aws-make-creds-file() {
   region="${region/${env}-/}"
 
   cat <<HERE
+# DO NOT COPY TO HOSTS OTHER THAN YOUR PERSONAL MACHINE!!!
+# DO NOT CHECK IN TO GIT REPOS WITHOUT ENCRYPTING!!!
+#
 # iam user: $(echo "${contents}" | cut -d, -f1)
 # console login url: $(echo "${contents}" | cut -d, -f5)
 # console password: $(echo "${contents}" | cut -d, -f2)

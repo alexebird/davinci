@@ -186,6 +186,7 @@ gpgp
 ### TODO docs
 
 1. auto-roles
+1. \_manual role
 
 "gpg Plus"
 

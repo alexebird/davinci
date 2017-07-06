@@ -601,16 +601,19 @@ HERE
 gpgp::cmd_find-secrets() {
   local search_terms="$@"
   local grep_pattern=''
+  local highlight_pattern=''
 
   for t in ${search_terms}; do
-    grep_pattern=" -e ${t}"
+    grep_pattern="${grep_pattern} | grep --color=never '${t}'"
+    highlight_pattern="${highlight_pattern}|(${t})"
   done
 
   if [[ -n "${grep_pattern}" ]]; then
-    grep_pattern=" | grep --color=auto -iP ${grep_pattern}"
+    grep_pattern="${grep_pattern} | grep --color=always -iP '${highlight_pattern/|}'"
   fi
 
-  eval find "${DAVINCI_GPGP_SECRETS_PATH}" -type f -name '*.gpg' ${grep_pattern}
+  cd "${DAVINCI_GPGP_SECRETS_PATH}"
+  eval find . -type f -name 'gpgp-role:\*' -a -prune -o -name '.git\*' -a -prune -o -type f -print ${grep_pattern} | sed -e's/^\../${DAVINCI_GPGP_SECRETS_PATH}\//'
 }
 
 gpgp::cmd_copy-secret() {
@@ -668,13 +671,14 @@ Subcommands:
 
 (run each subcommand with -h for more info)
 
-encrypt     Ecrypt a file with one or more roles.
-recips      Prints a \`-r FOOBAR -r BAR...\` string for use with gpg.
-ls          Prints the role heirarchy for all roles.
-ls ROLE...  Prints the role heirarchy for the specified roles.
-import      Imports the public keys at DAVINCI_GPGP_PATH, and the ownertrust.txt file.
-add-key     Read a public gpg key from stdin, store it by the correct conventions, add it to ownertrust.txt.
-reencrypt   Reencrypts the secrets at DAVINCI_GPGP_SECRETS_PATH.
+encrypt        Ecrypt a file with one or more roles.
+recips         Prints a \`-r FOOBAR -r BAR...\` string for use with gpg.
+ls             Prints the role heirarchy for all roles.
+ls ROLE...     Prints the role heirarchy for the specified roles.
+import         Imports the public keys at DAVINCI_GPGP_PATH, and the ownertrust.txt file.
+add-key        Read a public gpg key from stdin, store it by the correct conventions, add it to ownertrust.txt.
+copy-secret    Copy a secret to the clipboard.
+reencrypt      Reencrypts the secrets at DAVINCI_GPGP_SECRETS_PATH.
 HERE
 }
 

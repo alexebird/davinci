@@ -425,7 +425,7 @@ gpgp::secrets_reencrypt_dir() {
   # if it ends with gpg, re-encrypt.
   for secret in $(find "${dir}" -maxdepth 1 -type f -name '*.gpg') ; do
     any_secrets='t'
-    echo -e "  ${COLOR_YELLOW}+/- reencrypting${COLOR_RESET} ${secret}"
+    echo -e "  ${COLOR_YELLOW}~ reencrypting${COLOR_RESET} ${secret}"
 
     if [[ "${dry_run}" == "false" ]]; then
       local tmp_secret="${secret/%gpg/__new.gpg}"

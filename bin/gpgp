@@ -604,7 +604,7 @@ gpgp::cmd_find-secrets() {
   local highlight_pattern=''
 
   for t in ${search_terms}; do
-    grep_pattern="${grep_pattern} | grep --color=never '${t}'"
+    grep_pattern="${grep_pattern} | grep --color=never -i '${t}'"
     highlight_pattern="${highlight_pattern}|(${t})"
   done
 

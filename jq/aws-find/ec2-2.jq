@@ -2,6 +2,7 @@ map([
     .PublicIpAddress // "",
     .PrivateIpAddress // "",
     ((.Tags // []) | map(select(.Key == "Name")) | .[] | .Value) // "",
+    ((.Tags // []) | map(select(.Key == "color")) | .[] | .Value) // "",
     .State.Name // "",
     .InstanceType // "",
     .ImageId // "",

@@ -94,7 +94,7 @@ HERE
 
   shift $(($OPTIND - 1))
   local args="$*"
-  local headers="PUBLIC_IP PRIVATE_IP NAME COLOR STATE TYPE IMAGE LAUNCHED KEY SUBNET CIDR ID"
+  local headers="PUBLIC_IP PRIVATE_IP NAME COLOR ROLE STATE TYPE IMAGE LAUNCHED KEY SUBNET CIDR ID"
 
   if [[ "${all}" == 'false' ]]; then
     headers+=" LAUNCHED:. PUBLIC_IP:. ID:. SUBNET:. CIDR:."

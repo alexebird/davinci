@@ -678,6 +678,7 @@ ls ROLE...     Prints the role heirarchy for the specified roles.
 import         Imports the public keys at DAVINCI_GPGP_PATH, and the ownertrust.txt file.
 add-key        Read a public gpg key from stdin, store it by the correct conventions, add it to ownertrust.txt.
 copy-secret    Copy a secret to the clipboard.
+find-secrets   List secrets matching the specified pattern.
 reencrypt      Reencrypts the secrets at DAVINCI_GPGP_SECRETS_PATH.
 HERE
 }

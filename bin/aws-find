@@ -164,10 +164,29 @@ volume() {
     | tableme ID SNAPSHOT_ID AZ STATE ENCRYPTED SIZE CREATED
 }
 
+ecr() {
+  aws ecr describe-images \
+    --repository-name "${1:?must pass repo name}" \
+    --max-items 100 \
+    --page-size 100 \
+    --filter tagStatus=TAGGED \
+    | jq -r '.imageDetails
+      | map([
+        (.imageTags | sort | join(",")),
+        (.imagePushedAt | todate),
+        (.imageSizeInBytes / 1024.0 / 1024.0 | tostring + " MB"),
+        .imageDigest])
+      | sort_by(.[1])
+      | reverse
+      | .[]
+      | @csv' \
+    | tableme TAGS PUSHED SIZE SHA256
+}
+
 main() {
   [[ -z "${DAVINCI_ENV}" ]] && { echo "must set davinci-env" ; exit 1 ; }
 
-  local fn="${1:?must pass arg: asg, elb, ec2, ami}" ; shift
+  local fn="${1:?must pass arg: asg, elb, ec2, ami, volume, ecr}" ; shift
   local other_args="$*"
 
   if declare -F | grep -q "${fn}"; then

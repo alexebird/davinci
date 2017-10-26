@@ -90,13 +90,15 @@ davincienv::print_env() {
 }
 
 davinci-davinci-env-unset() {
-  local global_common_dir="${DAVINCI_ENV_PATH}/common"
+  local global_precommon_dir="${DAVINCI_ENV_PATH}/precommon"
   local global_env_dir="${DAVINCI_ENV_PATH}/${DAVINCI_ENV}"
   local global_subenv_dir="${DAVINCI_ENV_PATH}/${DAVINCI_ENV}/${DAVINCI_SUBENV}"
+  local global_postcommon_dir="${DAVINCI_ENV_PATH}/postcommon"
 
-  local project_local_common_dir="$(davincienv::local_git_env_path 'common')"
+  local project_local_precommon_dir="$(davincienv::local_git_env_path 'precommon')"
   local project_local_env_dir="$(davincienv::local_git_env_path "${DAVINCI_ENV}")"
   local project_local_subenv_dir="$(davincienv::local_git_env_path "${DAVINCI_ENV}/${DAVINCI_SUBENV}")"
+  local project_local_postcommon_dir="$(davincienv::local_git_env_path 'postcommon')"
 
   if [[ -z "${DAVINCI_ENV}" ]]; then
     #echo "DAVINCI_ENV not set, exiting"
@@ -107,13 +109,15 @@ davinci-davinci-env-unset() {
   unset DAVINCI_ENV_FULL
   unset DAVINCI_SUBENV
   unset DAVINCI_ENV
+  davincienv::unset_at_path "${global_postcommon_dir}"
   davincienv::unset_at_path "${global_subenv_dir}"
   davincienv::unset_at_path "${global_env_dir}"
-  davincienv::unset_at_path "${global_common_dir}"
+  davincienv::unset_at_path "${global_precommon_dir}"
 
+  davincienv::unset_at_path "${project_local_postcommon_dir}"
   davincienv::unset_at_path "${project_local_subenv_dir}"
   davincienv::unset_at_path "${project_local_env_dir}"
-  davincienv::unset_at_path "${project_local_common_dir}"
+  davincienv::unset_at_path "${project_local_precommon_dir}"
 }
 
 davinci-davinci-env() {
@@ -128,13 +132,15 @@ davinci-davinci-env() {
   fi
 
   # check if new_env exists
-  local global_common_dir="${DAVINCI_ENV_PATH}/common"
+  local global_precommon_dir="${DAVINCI_ENV_PATH}/precommon"
   local global_env_dir="${DAVINCI_ENV_PATH}/${new_env}"
   local global_subenv_dir="${DAVINCI_ENV_PATH}/${new_env}/${new_subenv}"
+  local global_postcommon_dir="${DAVINCI_ENV_PATH}/postcommon"
 
-  local project_local_common_dir="$(davincienv::local_git_env_path 'common')"
+  local project_local_precommon_dir="$(davincienv::local_git_env_path 'precommon')"
   local project_local_env_dir="$(davincienv::local_git_env_path "${new_env}")"
   local project_local_subenv_dir="$(davincienv::local_git_env_path "${new_env}/${new_subenv}")"
+  local project_local_postcommon_dir="$(davincienv::local_git_env_path 'postcommon')"
 
   if ! [[ -d "${global_env_dir}" ]] && ! [[ -d "${project_local_env_dir}" ]]; then
     echo "davinci-env: no env called '${new_env}'"
@@ -163,11 +169,13 @@ davinci-davinci-env() {
   fi
 
   # source the env dirs
-  davincienv::source_sh_files "${global_common_dir}"
+  davincienv::source_sh_files "${global_precommon_dir}"
   davincienv::source_sh_files "${global_env_dir}"
   davincienv::source_sh_files "${global_subenv_dir}"
+  davincienv::source_sh_files "${global_postcommon_dir}"
 
-  davincienv::source_sh_files "${project_local_common_dir}"
+  davincienv::source_sh_files "${project_local_precommon_dir}"
   davincienv::source_sh_files "${project_local_env_dir}"
   davincienv::source_sh_files "${project_local_subenv_dir}"
+  davincienv::source_sh_files "${project_local_postcommon_dir}"
 }

@@ -16,7 +16,7 @@
                     ($l.InstancePort | tostring)
                 ] | join("/"))
               ] | join("->"))
-        | .[]),
+        | join(",")),
     .CreatedTime])
 | .[]
 | @csv

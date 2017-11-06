@@ -40,6 +40,13 @@ _ovpn_cmd_reup() {
   _ovpn_cmd_up "${env}"
 }
 
+davinci-ovpn-ls() {
+  ps -ef \
+    | grep 'openvpn --config' \
+    | grep -v grep \
+    | grep --colour=never -o -P ${grep_flags} "(?<=${DAVINCI_ENV_PATH}/).+(?=/config\.ovpn)"
+}
+
 davinci-ovpn-native-ls() {
   local env="${DAVINCI_ENV:?must set davinci-env}"
   _ovpn_ls "${env}" '-o' | sort

@@ -125,6 +125,12 @@ davinci-davinci-env() {
   local new_env="${1:-}" ; shift
   local new_subenv="${1:-}" ; shift
 
+  # support passing a combined env and subenv
+  if echo "${new_env}" | grep -qP '^([a-z-]+)-([0-9]+)$'; then
+    new_subenv="$(echo "${new_env}" | sed -e's/^[a-z-]\+-//')"
+    new_env="$(echo "${new_env}" | sed -e's/-[0-9]\+$//')"
+  fi
+
   # maybe print the current env
   if [[ -z "${new_env}" ]]; then
     davincienv::print_env

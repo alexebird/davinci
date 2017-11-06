@@ -187,6 +187,7 @@ gpgp
 
 1. auto-roles
 1. \_manual role
+  - This means that gpgp will ignore the directory and the user should manually manage the encryption of the files therein.
 
 "gpg Plus"
 

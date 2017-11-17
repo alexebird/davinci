@@ -95,16 +95,18 @@ HERE
   shift $(($OPTIND - 1))
   local args="$*"
   local headers="PUBLIC_IP PRIVATE_IP NAME COLOR ROLE ENV STATE TYPE IMAGE LAUNCHED KEY SUBNET CIDR ID"
+  local describe_instances_args='--max-items=1000 --page-size=1000'
 
   if [[ "${all}" == 'false' ]]; then
     headers+=" LAUNCHED:. PUBLIC_IP:. ID:. SUBNET:. CIDR:. ENV:."
     env="${DAVINCI_ENV}"
+    describe_instances_args="--filters 'Name=tag-key,Values=env' 'Name=tag-value,Values=${DAVINCI_ENV_FULL}'"
   else
     env=""
   fi
 
   instances=$(
-    aws ec2 describe-instances --max-items=1000 --page-size=1000 \
+    aws ec2 describe-instances  \
       | jq -r --arg env "${env}" --arg state "${state}" -f "${DAVINCI_CLONE}/jq/aws-find/ec2-1.jq"
   )
 
@@ -169,6 +171,7 @@ volume() {
 
 ecr() {
   aws ecr describe-images \
+    --region "${ECR_REGION}" \
     --repository-name "${1:?must pass repo name}" \
     --max-items 100 \
     --page-size 100 \

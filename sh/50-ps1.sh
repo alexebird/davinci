@@ -171,6 +171,7 @@ _davinci_env_ps1() {
   local vpn_color="${PROMPT_COLOR_PURPLE}"
   local aws_color="${PROMPT_COLOR_YELLOW}"
   local do_color="${PROMPT_COLOR_BLUE}"
+  local terraform_ws_color="${PROMPT_COLOR_RED_HL}"
 
   # empty prompt section if env isnt set
   if [[ -z "${DAVINCI_ENV}" ]] ; then
@@ -188,6 +189,12 @@ _davinci_env_ps1() {
     new_ps1="${somewhat_sensitive_env_color}${DAVINCI_ENV_FULL}"
   else
     new_ps1="${env_color}${DAVINCI_ENV_FULL}"
+  fi
+
+  local tf_ws="$(terraform workspace show)"
+
+  if [[ "${PWD}" == *terraform* ]] && [[ "${DAVINCI_ENV_FULL}" != "${tf_ws}" ]]; then
+    new_ps1="${new_ps1}${terraform_ws_color}!tf"
   fi
 
   #if [[ -n "${AWS_ENV}" ]] ; then

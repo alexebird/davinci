@@ -49,7 +49,7 @@ map(
             (
                 ($TaskResources[.key].Networks // []) | map([
                     .IP,
-                    ((.DynamicPorts // [])
+                    (((.DynamicPorts // []) + (.ReservedPorts // []))
                         | map(.Value | tostring)
                         | join(","))
                     ] | join(":"))

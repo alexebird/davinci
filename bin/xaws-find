@@ -2,11 +2,37 @@
 set -euo pipefail
 #set -x
 
+# private version of davinci_clone
+_DAVINCI_CLONE="${DAVINCI_CLONE}"
+JQ_PATH="${_DAVINCI_CLONE}"
+TABLEME="${HOME}/go/bin/tableme"
+
+usage() {
+  cat <<HERE
+usage: aws-find SUBCMD [-h | options]
+
+SUBCMD:
+
+help
+ami
+asg
+ec2
+ecr
+elb
+snapshot
+volume
+
+Recommendation:
+
+add this to your bashrc/zshrc: alias af='aws-find'
+HERE
+}
+
 elb() {
   local args="$*"
   aws elb describe-load-balancers \
-    | jq -r -f "${DAVINCI_CLONE}/jq/aws-find/elb.jq" \
-    | tableme NAME SCHEME INSTANCES LISTENERS CREATED
+    | jq -r -f "${JQ_PATH}/jq/aws-find/elb.jq" \
+    | ${TABLEME} NAME SCHEME INSTANCES LISTENERS CREATED
 }
 
 asg() {
@@ -49,7 +75,7 @@ asg() {
       ])
       | .[]
       | @csv' \
-    | tableme NAME SIZE DESIRED CREATED 'LAUNCH CONFIG' IMAGE TYPE ${args}
+    | ${TABLEME} NAME SIZE DESIRED CREATED 'LAUNCH CONFIG' IMAGE TYPE ${args}
 }
 
 ec2() {
@@ -107,7 +133,7 @@ HERE
 
   instances=$(
     aws ec2 describe-instances  \
-      | jq -r --arg env "${env}" --arg state "${state}" -f "${DAVINCI_CLONE}/jq/aws-find/ec2-1.jq"
+      | jq -r --arg env "${env}" --arg state "${state}" -f "${JQ_PATH}/jq/aws-find/ec2-1.jq"
   )
 
   if [[ "${all}" == 'true' ]]; then
@@ -123,9 +149,9 @@ HERE
 
   local table=$(
     echo "${instances}" \
-      | jq -r --arg state "${state}" -f "${DAVINCI_CLONE}/jq/aws-find/ec2-2.jq" \
+      | jq -r --arg state "${state}" -f "${JQ_PATH}/jq/aws-find/ec2-2.jq" \
       | grep -i "${filter}" \
-      | tableme ${headers} ${args}
+      | ${TABLEME} ${headers} ${args}
   )
 
   echo "${table}"
@@ -146,7 +172,7 @@ ami() {
       | reverse
       | map([.ImageId, .Name, .State, .Public, .CreationDate])
       | .[] | @csv' \
-    | tableme ID NAME STATE PUBLIC CREATED
+    | ${TABLEME} ID NAME STATE PUBLIC CREATED
 }
 
 snapshot() {
@@ -156,7 +182,7 @@ snapshot() {
       | reverse
       | map([.SnapshotId, .State, .Description, .Encrypted, .VolumeId, .StartTime])
       | .[] | @csv' \
-    | tableme ID STATE DESC ENCRYPTED VOLUME_ID START_TIME
+    | ${TABLEME} ID STATE DESC ENCRYPTED VOLUME_ID START_TIME
 }
 
 volume() {
@@ -166,12 +192,12 @@ volume() {
       | reverse
       | map([.VolumeId, .SnapshotId, .AvailabilityZone, .State, .Encrypted, .Size, .CreateTime])
       | .[] | @csv' \
-    | tableme ID SNAPSHOT_ID AZ STATE ENCRYPTED SIZE CREATED
+    | ${TABLEME} ID SNAPSHOT_ID AZ STATE ENCRYPTED SIZE CREATED
 }
 
 ecr() {
   aws ecr describe-images \
-    --region "${ECR_REGION}" \
+    --region "${ECR_REGION:?must set ECR_REGION}" \
     --repository-name "${1:?must pass repo name}" \
     --max-items 100 \
     --page-size 100 \
@@ -186,11 +212,21 @@ ecr() {
       | reverse
       | .[]
       | @csv' \
-    | tableme TAGS PUSHED SIZE SHA256
+    | ${TABLEME} TAGS PUSHED SIZE SHA256
 }
 
 main() {
-  [[ -z "${DAVINCI_ENV}" ]] && { echo "must set davinci-env" ; exit 1 ; }
+  #[[ -z "${DAVINCI_ENV}" ]] && { echo "must set davinci-env" ; exit 1 ; }
+
+  if [[ "$#" == "0" ]]; then
+    usage
+    exit 0
+  fi
+
+  if [[ "$1" == "-h" ]] || [[ "$1" == "help" ]]; then
+    usage
+    exit 0
+  fi
 
   local fn="${1:?must pass arg: asg, elb, ec2, ami, volume, ecr}" ; shift
   local other_args="$*"

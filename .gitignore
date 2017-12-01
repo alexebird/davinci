@@ -1,7 +1,5 @@
 .DS_Store
 *.a
-go/bin
-go/src/github.com
 .idea
 *~
 \#~\#

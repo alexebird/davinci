@@ -67,7 +67,6 @@ davinci-toolme() {
 # ====================
 
 export PATH="${DAVINCI_CLONE}/bin:${PATH}"
-export PATH="${DAVINCI_CLONE}/go/bin:${PATH}"
 
 for path_ in $(_davinci_path_components); do
   if [[ -d "${path_}/bin" ]]; then
@@ -76,8 +75,6 @@ for path_ in $(_davinci_path_components); do
 done
 
 export MANPATH="${DAVINCI_CLONE}/man:${MANPATH}"
-export GOPATH="${DAVINCI_CLONE}/go"
-
 
 davinci-toolme
 

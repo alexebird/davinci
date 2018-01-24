@@ -1,5 +1,0 @@
-#!/bin/bash
-set -eo pipefail
-TYPE="$1"
-. "${DAVINCI_HOME}/davinci/sh/51-util.sh"
-xcolorize blue "^.+${TYPE}-blue.+$" green "^.+${TYPE}-green.+$"

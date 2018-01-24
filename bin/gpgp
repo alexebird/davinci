@@ -6,7 +6,30 @@
 #
 
 set -euo pipefail
-. "${DAVINCI_CLONE}/sh/01-colors.sh"
+
+COLOR_BLUE='\e[0;34m'
+COLOR_LIGHT_BLUE='\e[1;34m'
+COLOR_PURPLE='\e[0;35m'
+COLOR_LIGHT_PURPLE='\e[1;35m'
+COLOR_RED='\e[0;31m'
+COLOR_LIGHT_RED='\e[1;31m'
+COLOR_GREEN='\e[0;32m'
+COLOR_LIGHT_GREEN='\e[1;32m'
+COLOR_YELLOW='\e[0;33m'
+COLOR_LIGHT_YELLOW='\e[1;33m'
+COLOR_WHITE='\e[1;37m'
+COLOR_LIGHT_GRAY='\e[0;37m'
+COLOR_GRAY='\e[1;30m'
+COLOR_LIGHT_CYAN='\e[0;36m'
+COLOR_CYAN='\e[1;36m'
+COLOR_RESET='\e[0m'
+
+# Highlighted
+COLOR_YELLOW_HL='\e[0;30;43m'
+COLOR_RED_HL='\e[1;97;101m'
+
+# Blinking
+COLOR_YELLOW_BL='\e[5;30;43m'
 
 [ -n "${GPGP_VERBOSE:-}" ] && set -x
 
@@ -34,17 +57,21 @@ _join() {
   done
 }
 
+gpgp::gpgp_path() {
+  echo "${GPGP_PATH}"
+}
+
 gpgp::role_path() {
-  echo "${DAVINCI_GPGP_PATH}/gpgp/roles/${1:-}"
+  echo "$(gpgp::gpgp_path)/roles/${1:-}"
 }
 
 gpgp::pub_key_path() {
-  echo "${DAVINCI_GPGP_PATH}/gpgp/public/${1:-}"
+  echo "$(gpgp::gpgp_path)/public/${1:-}"
 }
 
-gpgp::secrets_path() {
-  echo "${DAVINCI_GPGP_SECRETS_PATH}/${1:-}"
-}
+#gpgp::secrets_path() {
+  #echo "${opt_gpgp_secrets_path}/${1:-}"
+#}
 
 gpgp::ls_roles() {
   find "$(gpgp::role_path)" -type f -printf '%f\n' | sort
@@ -230,8 +257,8 @@ HERE
   # get currently imported public keys for the owner's domains
   local current_keys=$(
     "${GPG}" --list-keys \
-      | grep -B1 -P "${DAVINCI_GPGP_EMAIL_DOMAINS}" \
-      | grep -vP "${DAVINCI_GPGP_PUB_KEY_ID_BLACKLIST}" \
+      | grep -B1 -P "${GPGP_EMAIL_DOMAINS}" \
+      | grep -vP "${GPGP_PUB_KEY_ID_BLACKLIST}" \
       | grep pub \
       | sed -n -e's;^pub.\+\/\(.\+\) .\+$;\1;p' \
       | sort \
@@ -267,8 +294,8 @@ HERE
     done
   fi
 
-  if [[ -s "${DAVINCI_GPGP_PATH}/gpgp/ownertrust.txt" ]]; then
-    "${GPG}" --import-ownertrust "${DAVINCI_GPGP_PATH}/gpgp/ownertrust.txt"
+  if [[ -s "$(gpgp::gpgp_path)/ownertrust.txt" ]]; then
+    "${GPG}" --import-ownertrust "$(gpgp::gpgp_path)/ownertrust.txt"
   fi
 
   for f in ${delete_keys} ; do
@@ -360,6 +387,7 @@ gpgp::secrets_find_role_file() {
   local role_file
 
   while true; do
+    >&2 echo $dir
     role_file="$(find "${dir}" -maxdepth 1 -type f -name 'gpgp-role:*' | grep --color=never -P '(:.+)')"
 
     if [[ -f "${role_file}" ]]; then
@@ -367,7 +395,11 @@ gpgp::secrets_find_role_file() {
       return 0
 
     # if we can't move upwards anymore
-    elif [[ "${DAVINCI_GPGP_SECRETS_PATH%/}" == "${dir%/}" ]]; then
+    #elif [[ "${opt_gpgp_secrets_path%/}" == "${dir%/}" ]]; then
+      #echo ""
+      #return 1
+    # just keep checking upwards to root path.
+    elif [[ "/" == "${dir}" ]]; then
       echo ""
       return 1
 
@@ -380,7 +412,7 @@ gpgp::secrets_find_role_file() {
 
 # The assumption is that the secrets dir is versioned, so this can do potentially
 # destructive actions. We should guard against unencrypted secrets being added
-# to version control, which we do.
+# to version control, which can be done with something like a .gitignore file.
 gpgp::secrets_reencrypt_dir() {
   local dir="${1:?must pass dir}" ; shift
   local dry_run="${1:-false}" ; shift
@@ -390,6 +422,7 @@ gpgp::secrets_reencrypt_dir() {
   echo '======================================'
   echo "target dir: ${dir}"
 
+  echo foo
   local role_file="$(gpgp::secrets_find_role_file "${dir}")"
   # if there's no role file, check if `dir` has only other directories in it, meaning
   # there are no secrets in `dir` to protect from not being encrypted, and thus it's okay
@@ -526,8 +559,8 @@ HERE
     rm -f "${new_tmp}"
   else
     mv -f "${new_tmp}" "$(gpgp::pub_key_path "${key_fname}")"
-    if ! grep -q "${key_id_long}" "${DAVINCI_GPGP_PATH}/gpgp/ownertrust.txt"; then
-      echo "${key_id_long}:6:" >> "${DAVINCI_GPGP_PATH}/gpgp/ownertrust.txt"
+    if ! grep -q "${key_id_long}" "$(gpgp::gpgp_path)/ownertrust.txt"; then
+      echo "${key_id_long}:6:" >> "$(gpgp::gpgp_path)/ownertrust.txt"
     fi
   fi
 }
@@ -547,8 +580,7 @@ gpgp::cmd_reencrypt() {
         cat <<HERE
 gpgp reencrypt [OPTIONS] [SECRETS_PATH]
 
-SECRETS_PATH defaults to DAVINCI_GPGP_SECRETS_PATH, otherwise
-must be inside DAVINCI_GPGP_SECRETS_PATH.
+SECRETS_PATH defaults to GPGP_SECRETS_PATH.
 
   -n    dry run
   -h    show this help text
@@ -571,13 +603,17 @@ HERE
   secrets_path="${1:-}"
 
   if [[ -z "${secrets_path}" ]]; then
-    secrets_path="${DAVINCI_GPGP_SECRETS_PATH}"
-  elif [[ "${secrets_path}" == *..* ]]; then
+    secrets_path="${opt_gpgp_secrets_path}"
+  #else
+    #secrets_path="${opt_gpgp_secrets_path}/${secrets_path}"
+  fi
+
+  if [[ "${secrets_path}" == *..* ]]; then
     echo "no '..' allowed in SECRETS_PATH"
     exit 1
-  else
-    secrets_path="${DAVINCI_GPGP_SECRETS_PATH}/${secrets_path}"
   fi
+
+  secrets_path="$(readlink -f "${secrets_path}")"
 
   # try to do a dry run first
   echo "checking for roles"
@@ -612,8 +648,8 @@ gpgp::cmd_find-secrets() {
     grep_pattern="${grep_pattern} | grep --color=always -iP '${highlight_pattern/|}'"
   fi
 
-  cd "${DAVINCI_GPGP_SECRETS_PATH}"
-  eval find . -type f -name 'gpgp-role:\*' -a -prune -o -name '.git\*' -a -prune -o -type f -print ${grep_pattern} | sed -e's/^\../${DAVINCI_GPGP_SECRETS_PATH}\//'
+  cd "${opt_gpgp_secrets_path}"
+  eval find . -type f -name 'gpgp-role:\*' -a -prune -o -name '.git\*' -a -prune -o -type f -print ${grep_pattern} | sed -e's/^\../${opt_gpgp_secrets_path}\//'
 }
 
 gpgp::cmd_copy-secret() {
@@ -672,20 +708,20 @@ Subcommands:
 (run each subcommand with -h for more info)
 
 encrypt        Ecrypt a file with one or more roles.
+reencrypt      Reencrypts the secrets at the specified path.
 recips         Prints a \`-r FOOBAR -r BAR...\` string for use with gpg.
 ls             Prints the role heirarchy for all roles.
 ls ROLE...     Prints the role heirarchy for the specified roles.
-import         Imports the public keys at DAVINCI_GPGP_PATH, and the ownertrust.txt file.
+import         Imports the public keys at GPGP_PATH, and the ownertrust.txt file.
 add-key        Read a public gpg key from stdin, store it by the correct conventions, add it to ownertrust.txt.
 copy-secret    Copy a secret to the clipboard.
 find-secrets   List secrets matching the specified pattern.
-reencrypt      Reencrypts the secrets at DAVINCI_GPGP_SECRETS_PATH.
 HERE
 }
 
 gpgp::assert_gpgp_config() {
-  if [[ -z "${DAVINCI_GPGP_EMAIL_DOMAINS:-}" ]]; then
-    echo "gpgp cannot be used when DAVINCI_GPGP_EMAIL_DOMAINS is not set."
+  if [[ -z "${GPGP_EMAIL_DOMAINS:-}" ]]; then
+    echo "gpgp cannot be used when GPGP_EMAIL_DOMAINS is not set."
     return 1
   fi
   return 0
@@ -723,6 +759,8 @@ gpgp::assert_roles_valid() {
 }
 
 main() {
+  declare -g opt_gpgp_secrets_path="${GPGP_SECRETS_PATH:-}"
+
   gpgp::assert_gpgp_config
   gpgp::assert_roles_valid
 
@@ -789,9 +827,9 @@ main() {
       ;;
 
     # default is to encrypt a file or stdin
-    *)
-      gpgp::cmd_encrypt "$@"
-      ;;
+    #*)
+      #gpgp::cmd_encrypt "$@"
+      #;;
 
   esac
 }

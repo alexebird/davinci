@@ -53,77 +53,6 @@ __git_ps1 ()
   fi
 }
 
-#_aws_env_ps1() {
-  #if [[ -n "${AWS_ENV}" ]] ; then
-    #if [[ "${AWS_ENV}" == "prod" ]] ; then
-      #case "$(_lib_current_shell)" in
-        #bash)
-          #echo "${PROMPT_COLOR_YELLOW}(a:${PROMPT_COLOR_YELLOW}${AWS_ENV}${PROMPT_COLOR_RED}!${PROMPT_COLOR_YELLOW})${PROMPT_COLOR_RESET}"
-          #;;
-        #zsh)
-          #echo "%{%F{yellow}%}(a:${AWS_ENV}%{%F{red}%}!%{%F{yellow}%})%{%f%}"
-          #;;
-      #esac
-    #else
-      #case "$(_lib_current_shell)" in
-        #bash)
-          #echo "${PROMPT_COLOR_YELLOW}(a:${AWS_ENV})${PROMPT_COLOR_RESET}"
-          #;;
-        #zsh)
-          #echo "%{%F{yellow}%}(a:${AWS_ENV})%{%f%}"
-          #;;
-      #esac
-    #fi
-  #fi
-#}
-
-#_nomad_env_ps1() {
-  #if [[ -n "${NOMAD_ENV}" ]] ; then
-    #local pids="$(_nomad_tunnel_pids)"
-    #if [[ "${NOMAD_ENV}" == "prod" ]] ; then
-      #if [[ -n "${pids}" ]]; then
-        #case "$(_lib_current_shell)" in
-          #bash)
-            #echo "${PROMPT_COLOR_BLUE}(n:${NOMAD_ENV}${PROMPT_COLOR_RED}!${PROMPT_COLOR_BLUE})${PROMPT_COLOR_RESET}"
-            #;;
-          #zsh)
-            #echo "%F{blue}(n:${NOMAD_ENV}%F{red}!%F{blue})%f"
-            #;;
-        #esac
-      #else
-        #case "$(_lib_current_shell)" in
-          #bash)
-            #echo "${PROMPT_COLOR_BLUE}(n:${PROMPT_COLOR_RED}${NOMAD_ENV}${PROMPT_COLOR_RED}!${PROMPT_COLOR_BLUE})${PROMPT_COLOR_RESET}"
-            #;;
-          #zsh)
-            #echo "%F{blue}(n:%F{red}${NOMAD_ENV}!%F{blue})%f"
-            #;;
-        #esac
-      #fi
-    #else
-      #if [[ -n "${pids}" ]]; then
-        #case "$(_lib_current_shell)" in
-          #bash)
-            #echo "${PROMPT_COLOR_BLUE}(n:${NOMAD_ENV})${PROMPT_COLOR_RESET}"
-            #;;
-          #zsh)
-            #echo "%F{blue}(n:${NOMAD_ENV}%F{blue})%f"
-            #;;
-        #esac
-      #else
-        #case "$(_lib_current_shell)" in
-          #bash)
-            #echo "${PROMPT_COLOR_BLUE}(n:${PROMPT_COLOR_RED}${NOMAD_ENV}${PROMPT_COLOR_BLUE})${PROMPT_COLOR_RESET}"
-            #;;
-          #zsh)
-            #echo "%F{blue}(n:%F{red}${NOMAD_ENV}%F{blue})%f"
-            #;;
-        #esac
-      #fi
-    #fi
-  #fi
-#}
-
 _ovpn_tb_ps1() {
   local vpns="$(davinci-ovpn-tb-ls | awk '{ gsub(/-\w+-\w+-[[:digit:]]+/, ""); printf "%s", NR==1?$0:","$0 }')"
   if [[ -n "${vpns}" ]]; then
@@ -158,7 +87,7 @@ _git_color_ps1() {
   if test $(git status 2> /dev/null | grep -c :) -eq 0; then
     echo "${PROMPT_COLOR_GREEN}$(__git_ps1)${PROMPT_COLOR_RESET}"
   else
-    echo "${PROMPT_COLOR_RED}$(__git_ps1)${PROMPT_COLOR_RESET}"
+    echo "${PROMPT_COLOR_RED}$(__git_ps1 " (%s)")${PROMPT_COLOR_RESET}"
   fi
 }
 

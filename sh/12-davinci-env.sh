@@ -33,10 +33,25 @@ davincienv::unset_at_path() {
   done
 
   for e in $(find "${path_}" -maxdepth 1 -type f -name "*.sh.gpg" | sort); do
-    for v in $(${GPG} -d "${e}" | grep -h '^export' | sed -e's/^export //' -e's/=.\+$//'); do
+    for v in $(${GPG} --batch=yes --quiet -d "${e}" | grep -h '^export' | sed -e's/^export //' -e's/=.\+$//'); do
       unset "${v}"
     done
   done
+}
+
+davincienv::print_vars() {
+  local path_="$1"
+  local contents=''
+
+  echo "${path_}"
+
+  if echo "${path_}" | grep -q -E ".+\.sh$"; then
+    contents="$(cat "${f}")"
+    echo "${contents}" | grep -h '^export' | sed -e's/^export //' -e's/=.\+$//'
+  elif echo "${path_}" | grep -q -E ".+\.sh\.gpg$"; then
+    contents="$(${GPG} --batch=yes --quiet -d "${f}")"
+    echo "${contents}" | grep -h '^export' | sed -e's/^export //' -e's/=.\+$//'
+  fi
 }
 
 davincienv::source_sh_files() {
@@ -48,11 +63,13 @@ davincienv::source_sh_files() {
   fi
 
   for f in $(find "${path_}" -maxdepth 1 -type f -name '*.sh' | sort); do
+    davincienv::print_vars "${f}"
     . "${f}"
   done
 
   for f in $(find "${path_}" -maxdepth 1 -type f -name '*.sh.gpg' | sort); do
-    . <(${GPG} -d "${f}")
+    davincienv::print_vars "${f}"
+    . <(${GPG} --batch=yes --quiet -d "${f}")
   done
 }
 

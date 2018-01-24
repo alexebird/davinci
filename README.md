@@ -66,26 +66,26 @@ export DAVINCI_OPTS='prompt'
 ```
 
 ```bash
-# DAVINCI_GPGP_PATH
+# GPGP_PATH
 # - The path where gpgp should look.
-# - Inside DAVINCI_GPGP_PATH, the expected structure is:
-# - "${DAVINCI_GPGP_PATH}"
-#   └── gpgp/
-#       ├── public/    # public gpg keys
-#       └── roles/     # gpgp roles
-export DAVINCI_GPGP_PATH="${DAVINCI_HOME}/infra"
+# - Inside GPGP_PATH, the expected structure is:
+# - "${GPGP_PATH}"
+#    ├── public/    # public gpg keys
+#    └── roles/     # gpgp roles
+export GPGP_PATH="${DAVINCI_HOME}/infra"
 ```
 
 ```bash
-# DAVINCI_GPGP_EMAIL_DOMAINS
-# - You or your company's domain or domains ('|' separated) that are associated with gpg public keys.
-export DAVINCI_GPGP_EMAIL_DOMAINS='cool-co.com'
+# GPGP_EMAIL_DOMAINS
+# - One or more email domains which are to be managed by gpgp. This could probably be made unnecessary with a small amount of effort.
+# - '|' separated.
+export GPGP_EMAIL_DOMAINS='cool-co.com|foobar.com'
 ```
 
 ```bash
-# DAVINCI_GPGP_PUB_KEY_ID_BLACKLIST
+# GPGP_PUB_KEY_ID_BLACKLIST
 # - patterns separated by a pipe which should not be deleted by gpgp import
-export DAVINCI_GPGP_PUB_KEY_ID_BLACKLIST='DE4DBEEF'
+export GPGP_PUB_KEY_ID_BLACKLIST='DE4DBEEF'
 ```
 
 Finally, source davinci.
@@ -101,7 +101,7 @@ Here's a minimal `.bashrc` example:
 
 export DAVINCI_HOME="${HOME}/cool-co"
 export DAVINCI_OPTS='prompt'
-export DAVINCI_GPGP_EMAIL_DOMAINS='cool-co.com'
+export GPGP_EMAIL_DOMAINS='cool-co.com'
 
 . "${HOME}/davinci/sourceme.sh"
 
@@ -198,7 +198,7 @@ gpgp
 
 # whitelist of email domains of public gpg keys.
 # for multiple, separate with a '|'.
-export DAVINCI_GPGP_EMAIL_DOMAINS='foobar.com'
+export GPGP_EMAIL_DOMAINS='foobar.com'
 ```
 
 For the person provisioning new team member's gpg keys:
@@ -212,11 +212,11 @@ gpg --edit-key <key_id>
 > quit
 
 # then export the ownertrust file to the repo, and commit.
-gpg --export-ownertrust > ${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt
+gpg --export-ownertrust > ${GPGP_PATH}/gpg/ownertrust.txt
 
 # on subsequent runs of `gpgp import`, the ownertrust file will be imported
 # and the new key will be trusted.
-gpg --import-ownertrust < ${DAVINCI_GPGP_PATH}/gpg/ownertrust.txt
+gpg --import-ownertrust < ${GPGP_PATH}/gpg/ownertrust.txt
 ```
 
 ### Roles

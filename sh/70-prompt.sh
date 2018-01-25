@@ -7,7 +7,7 @@ _davinci_safety_ps1() {
     PS1="${ORIG_PS1} $(_davinci_env_ps1)%# "
   elif [ ${BASH_VERSION} ]; then
     #PS1="${PROMPT_COLOR_CYAN}\W$(_git_color_ps1)$(_aws_env_ps1)$(_nomad_env_ps1)$(_ovpn_native_ps1)${PROMPT_COLOR_CYAN}\$${PROMPT_COLOR_RESET} "
-    PS1="${PROMPT_COLOR_CYAN}\W$(_git_color_ps1)$(_davinci_env_ps1)${PROMPT_COLOR_CYAN}\$${PROMPT_COLOR_RESET} "
+    PS1="${PROMPT_COLOR_CYAN}\W $(_git_color_ps1)$(_davinci_env_ps1)${PROMPT_COLOR_CYAN}\$${PROMPT_COLOR_RESET} "
   fi
 }
 

@@ -27,22 +27,10 @@ _davinci_source_user_dot_davinci() {
   done
 }
 
-_davinci_source_davinci_env_auto() {
-  if [[ -d "${DAVINCI_ENV_PATH}" ]] && [[ -d "${DAVINCI_ENV_PATH}/auto" ]]; then
-    for f in $(find ${DAVINCI_ENV_PATH}/auto/ -type f -name '*.sh' | sort); do
-      . "${f}"
-    done
-
-    for f in $(find ${DAVINCI_ENV_PATH}/auto/ -type f -name '*.sh.gpg' | sort); do
-      . <(${GPG} -d "${f}")
-    done
-  fi
-}
-
 davinci-toolme() {
   _davinci_source_bash
   _davinci_source_user_dot_davinci
-  _davinci_source_davinci_env_auto
+  davincienv::source_sh_files "${DAVINCI_ENV_PATH}/auto"
 }
 
 # config env vars
@@ -80,6 +68,9 @@ done
 export MANPATH="${DAVINCI_CLONE}/man:${MANPATH}"
 
 davinci-toolme
+
+# this config has to be done after toolme since it references a color
+[ -z "${DAVINCI_PROMPT_COLOR}" ]  && export DAVINCI_PROMPT_COLOR="${PROMPT_COLOR_CYAN}"
 
 if _davinci_opt_use_safety_prompt; then
   [ ${ZSH_VERSION:-} ] && precmd() { _davinci_safety_ps1; }

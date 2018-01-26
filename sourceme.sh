@@ -56,6 +56,7 @@ davinci-toolme() {
 [ -z "${DAVINCI_ENV_PATH}" ] && export DAVINCI_ENV_PATH="${HOME}/.davinci-env"
 
 [ -z "${DAVINCI_PROMPT_PREFIX}" ] && export DAVINCI_PROMPT_PREFIX="\W"
+[ -z "${DAVINCI_PROMPT_COLOR}" ]  && export DAVINCI_PROMPT_COLOR="${PROMPT_COLOR_CYAN}"
 
 [ -z "${DAVINCI_OPTS}" ] && export DAVINCI_OPTS=''
 

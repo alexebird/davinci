@@ -55,6 +55,8 @@ davinci-toolme() {
 [ -z "${DAVINCI_PATH}" ]     && export DAVINCI_PATH="${HOME}/.davinci"
 [ -z "${DAVINCI_ENV_PATH}" ] && export DAVINCI_ENV_PATH="${HOME}/.davinci-env"
 
+[ -z "${DAVINCI_PROMPT_PREFIX}" ] && export DAVINCI_PROMPT_PREFIX="\W"
+
 [ -z "${DAVINCI_OPTS}" ] && export DAVINCI_OPTS=''
 
 # gpgp

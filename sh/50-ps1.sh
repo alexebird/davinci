@@ -120,7 +120,7 @@ _davinci_env_ps1() {
     new_ps1="${env_color}${DAVINCI_ENV_FULL}"
   fi
 
-  local tf_ws="$(terraform workspace show)"
+  local tf_ws="$(\terraform workspace show)"
 
   if [[ "${PWD}" == *terraform* ]] && [[ "${DAVINCI_ENV_FULL}" != "${tf_ws}" ]]; then
     new_ps1="${new_ps1}${terraform_ws_color}!tf"

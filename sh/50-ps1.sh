@@ -94,7 +94,7 @@ _git_color_ps1() {
 _davinci_env_ps1() {
   local new_ps1
   local parens_color="${PROMPT_COLOR_LIGHT_GREEN}"
-  local env_color="${PROMPT_COLOR_LIGHT_GREEN}"
+  local env_color="${PROMPT_COLOR_LIGHT_YELLOW}"
   local sensitive_env_color="${PROMPT_COLOR_RED_HL}"
   local somewhat_sensitive_env_color="${PROMPT_COLOR_LIGHT_YELLOW}"
   local vpn_color="${PROMPT_COLOR_PURPLE}"

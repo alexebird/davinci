@@ -2,7 +2,7 @@
 
 _ovpn_connect() {
   local env="$1"
-  local conf="${DAVINCI_ENV_PATH}/${env}/config.ovpn"
+  local conf="${DAVINCI_ENV_PATH}/${env}/client.ovpn"
 
   if [[ -z "$(_ovpn_pid ${env})" ]]; then
     sudo openvpn --config "${conf}" --daemon
@@ -15,7 +15,7 @@ _ovpn_ls() {
   ps -ef \
     | grep 'openvpn --config' \
     | grep -v grep \
-    | grep --colour=never -P ${grep_flags} "(?<=${DAVINCI_ENV_PATH}/)${env}(?=/config\.ovpn)"
+    | grep --colour=never -P ${grep_flags} "(?<=${DAVINCI_ENV_PATH}/)${env}(?=/client\.ovpn)"
 }
 
 _ovpn_pid() {
@@ -44,7 +44,7 @@ davinci-ovpn-ls() {
   ps -ef \
     | grep 'openvpn --config' \
     | grep -v grep \
-    | grep --colour=never -o -P ${grep_flags} "(?<=${DAVINCI_ENV_PATH}/).+(?=/config\.ovpn)"
+    | grep --colour=never -o -P ${grep_flags} "(?<=${DAVINCI_ENV_PATH}/).+(?=/client\.ovpn)"
 }
 
 davinci-ovpn-native-ls() {

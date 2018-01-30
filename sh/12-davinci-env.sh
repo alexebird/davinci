@@ -126,15 +126,18 @@ davinci-davinci-env-unset() {
   unset DAVINCI_ENV_FULL
   unset DAVINCI_SUBENV
   unset DAVINCI_ENV
-  davincienv::unset_at_path "${global_postcommon_dir}"
-  davincienv::unset_at_path "${global_subenv_dir}"
-  davincienv::unset_at_path "${global_env_dir}"
-  davincienv::unset_at_path "${global_precommon_dir}"
-
   davincienv::unset_at_path "${project_local_postcommon_dir}"
+  davincienv::unset_at_path "${global_postcommon_dir}"
+
   davincienv::unset_at_path "${project_local_subenv_dir}"
+  davincienv::unset_at_path "${global_subenv_dir}"
+
+
   davincienv::unset_at_path "${project_local_env_dir}"
+  davincienv::unset_at_path "${global_env_dir}"
+
   davincienv::unset_at_path "${project_local_precommon_dir}"
+  davincienv::unset_at_path "${global_precommon_dir}"
 }
 
 davinci-davinci-env() {
@@ -193,12 +196,14 @@ davinci-davinci-env() {
 
   # source the env dirs
   davincienv::source_sh_files "${global_precommon_dir}"
-  davincienv::source_sh_files "${global_env_dir}"
-  davincienv::source_sh_files "${global_subenv_dir}"
-  davincienv::source_sh_files "${global_postcommon_dir}"
-
   davincienv::source_sh_files "${project_local_precommon_dir}"
+
+  davincienv::source_sh_files "${global_env_dir}"
   davincienv::source_sh_files "${project_local_env_dir}"
+
+  davincienv::source_sh_files "${global_subenv_dir}"
   davincienv::source_sh_files "${project_local_subenv_dir}"
+
+  davincienv::source_sh_files "${global_postcommon_dir}"
   davincienv::source_sh_files "${project_local_postcommon_dir}"
 }

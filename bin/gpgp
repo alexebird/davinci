@@ -422,7 +422,6 @@ gpgp::secrets_reencrypt_dir() {
   echo '======================================'
   echo "target dir: ${dir}"
 
-  echo foo
   local role_file="$(gpgp::secrets_find_role_file "${dir}")"
   # if there's no role file, check if `dir` has only other directories in it, meaning
   # there are no secrets in `dir` to protect from not being encrypted, and thus it's okay

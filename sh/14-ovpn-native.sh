@@ -54,6 +54,16 @@ davinci-ovpn-native-ls() {
 
 davinci-ovpn() {
   local cmd="${1:?must pass up/down/reup}" ; shift
-  local env="${DAVINCI_ENV:?must set davinci-env}"
+  local env="${DAVINCI_ENV}"
+
+  if [[ -z "${env}" ]]; then
+    env="${1}"
+  fi
+
+  if [[ -z "${env}" ]]; then
+    echo "must pass env or set DAVINCI_ENV"
+    return 1
+  fi
+
   _ovpn_cmd_"${cmd}" "${env}"
 }

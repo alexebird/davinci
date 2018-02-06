@@ -58,7 +58,7 @@ _join() {
 }
 
 gpgp::gpgp_path() {
-  echo "${GPGP_PATH}"
+  echo "${GPGP_PATH}/gpgp"
 }
 
 gpgp::role_path() {
@@ -542,7 +542,7 @@ HERE
 
   local key_id_short="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /^pub.+\/([0-9A-Z]+)/ && puts($1)')"
   #local role_name="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /\<(.+)@/ && puts($1)')"
-  local key_size="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /^pub\s+([0-9A-Z]+)\// && puts($1)')"
+  local key_size="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /^pub\s+([0-9A-Z]+)\//i && puts($1)')"
   local email="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /\<(.+)\>/ && puts($1)')"
   local key_id_long="$(echo "${key_fingerprint}" | ruby -ne '$_ =~ /Key fingerprint = ([0-9A-Z ]+)$/ && puts($1.gsub(/\s+/, ""))')"
 
@@ -648,7 +648,7 @@ gpgp::cmd_find-secrets() {
   fi
 
   cd "${opt_gpgp_secrets_path}"
-  eval find . -type f -name 'gpgp-role:\*' -a -prune -o -name '.git\*' -a -prune -o -type f -print ${grep_pattern} | sed -e's/^\../${opt_gpgp_secrets_path}\//'
+  eval find . -type f -name 'gpgp-role:\*' -a -prune -o -name '.git\*' -a -prune -o -type f -print ${grep_pattern} | sed -e's/^\../${GPGP_SECRETS_PATH}\//'
 }
 
 gpgp::cmd_copy-secret() {

@@ -387,7 +387,7 @@ gpgp::secrets_find_role_file() {
   local role_file
 
   while true; do
-    >&2 echo $dir
+    #>&2 echo $dir
     role_file="$(find "${dir}" -maxdepth 1 -type f -name 'gpgp-role:*' | grep --color=never -P '(:.+)')"
 
     if [[ -f "${role_file}" ]]; then
@@ -474,6 +474,10 @@ gpgp::secrets_reencrypt_dir() {
   # if the file ends with '.cleartext', dont worry about encrypting it.
   for secret in $(find "${dir}" -maxdepth 1 -name '.git' -prune -o \( -type f -a -not -name '*.gpg' -a -not -name 'gpgp-role:*' \) -print) ; do
     any_secrets='t'
+
+    if [[ "${secret}" == *.gitignore ]]; then
+      continue
+    fi
 
     if [[ "${secret}" == *.cleartext ]]; then
       echo -e "  ${COLOR_LIGHT_BLUE}cleartext${COLOR_RESET} ${secret}"

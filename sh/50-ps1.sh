@@ -126,10 +126,9 @@ _davinci_env_ps1() {
     new_ps1="${new_ps1}${terraform_ws_color}!tf"
   fi
 
-  #if [[ -n "${AWS_ENV}" ]] ; then
-  if env | grep -q '^AWS_' ; then
-     new_ps1="${new_ps1}${aws_color}a"
-  fi
+  #if env | grep -q '^AWS_' ; then
+     #new_ps1="${new_ps1}${aws_color}a"
+  #fi
 
   if env | grep -q '^DIGITALOCEAN_' ; then
      new_ps1="${new_ps1}${do_color}d"

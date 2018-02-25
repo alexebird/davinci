@@ -123,7 +123,7 @@ _davinci_env_ps1() {
   local tf_ws="$(\terraform workspace show)"
 
   if [[ "${PWD}" == *terraform* ]] && [[ "${DAVINCI_ENV_FULL}" != "${tf_ws}" ]]; then
-    new_ps1="${new_ps1}${terraform_ws_color}!tf"
+    new_ps1="${new_ps1}${terraform_ws_color}!tf${PROMPT_COLOR_RESET}"
   fi
 
   if davinci-ovpn-native-ls | grep -q "${DAVINCI_ENV}" ; then

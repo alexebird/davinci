@@ -6,7 +6,6 @@ alias wdp="watch -n1 'docker ps --format \"table {{.ID}}\t{{.Status}}\t{{.Names}
 alias urlencode='python -c "import urllib, sys; print urllib.quote(sys.argv[1])"'
 alias urldecode='python -c "import urllib, sys; print urllib.unquote(sys.argv[1])"'
 alias n='nomad'
-alias ec2='aws-find ec2'
 
 if ! uname -a | grep -q Darwin ; then
   alias open='xdg-open'
@@ -18,7 +17,7 @@ else
 fi
 
 hs() {
-    history | grep -i "$*"
+    history | grep -i -- "$*"
 }
 
 f() {

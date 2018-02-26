@@ -113,9 +113,9 @@ _davinci_env_ps1() {
   fi
 
   if [[ "${DAVINCI_ENV}" == "prod" ]] ; then
-    new_ps1="${sensitive_env_color}${DAVINCI_ENV_FULL}"
+    new_ps1="${sensitive_env_color}${DAVINCI_ENV_FULL}${PROMPT_COLOR_RESET}"
   elif [[ "${DAVINCI_ENV}" == "dev" ]] ; then
-    new_ps1="${somewhat_sensitive_env_color}${DAVINCI_ENV_FULL}"
+    new_ps1="${somewhat_sensitive_env_color}${DAVINCI_ENV_FULL}${PROMPT_COLOR_RESET}"
   else
     new_ps1="${env_color}${DAVINCI_ENV_FULL}"
   fi
@@ -123,15 +123,7 @@ _davinci_env_ps1() {
   local tf_ws="$(\terraform workspace show)"
 
   if [[ "${PWD}" == *terraform* ]] && [[ "${DAVINCI_ENV_FULL}" != "${tf_ws}" ]]; then
-    new_ps1="${new_ps1}${terraform_ws_color}!tf"
-  fi
-
-  #if env | grep -q '^AWS_' ; then
-     #new_ps1="${new_ps1}${aws_color}a"
-  #fi
-
-  if env | grep -q '^DIGITALOCEAN_' ; then
-     new_ps1="${new_ps1}${do_color}d"
+    new_ps1="${new_ps1}${terraform_ws_color}!tf${PROMPT_COLOR_RESET}"
   fi
 
   if davinci-ovpn-native-ls | grep -q "${DAVINCI_ENV}" ; then

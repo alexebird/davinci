@@ -40,24 +40,25 @@ _ovpn_cmd_reup() {
   _ovpn_cmd_up "${env}"
 }
 
-davinci-ovpn-ls() {
+_ovpn_cmd_ls() {
   ps -ef \
     | grep 'openvpn --config' \
     | grep -v grep \
     | grep --colour=never -o -P ${grep_flags} "(?<=${DAVINCI_ENV_PATH}/).+(?=/client\.ovpn)"
 }
 
-davinci-ovpn-native-ls() {
+_ovpn_cmd_nls() {
   local env="${DAVINCI_ENV:?must set davinci-env}"
   _ovpn_ls "${env}" '-o' | sort
 }
 
 davinci-ovpn() {
   local cmd="${1:?must pass up/down/reup}" ; shift
+  local env_override="${1:-}" ; shift
   local env="${DAVINCI_ENV}"
 
-  if [[ -z "${env}" ]]; then
-    env="${1}"
+  if [[ -n "${env_override}" ]]; then
+    env="${env_override}"
   fi
 
   if [[ -z "${env}" ]]; then

@@ -110,7 +110,7 @@ _davinci_env_ps1() {
     new_ps1="${new_ps1}${terraform_ws_color}!tf${PROMPT_COLOR_RESET}"
   fi
 
-  if ovpn ls | grep -q "${DAVINCI_ENV}" ; then
+  if davinci-ovpn ls | grep -q "${DAVINCI_ENV}" ; then
      new_ps1="${new_ps1}${vpn_color}v"
   fi
 

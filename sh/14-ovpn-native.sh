@@ -2,7 +2,9 @@
 
 _ovpn_connect() {
   local env="$1"
-  local conf="${DAVINCI_ENV_PATH}/${env}/client.ovpn"
+  # TODO the path prefix shouldn't be hardcoded, but it is required as of writing due to
+  # the addition of the support of multiple paths in DAVINCI_ENV_PATH
+  local conf="${DAVINCI_HOME}/.davinci-env/${env}/client.ovpn"
 
   if [[ -z "$(_ovpn_pid ${env})" ]]; then
     sudo openvpn --config "${conf}" --daemon
@@ -11,11 +13,13 @@ _ovpn_connect() {
 
 _ovpn_ls() {
   local env="$1" ; shift
-  local grep_flags="${1:-}" ; shift
+  #local grep_flags="${1:-}" ; shift
+  # TODO the path prefix shouldn't be hardcoded, but it is required as of writing due to
+  # the addition of the support of multiple paths in DAVINCI_ENV_PATH
   ps -ef \
     | grep 'openvpn --config' \
     | grep -v grep \
-    | grep --colour=never -P ${grep_flags} "(?<=${DAVINCI_ENV_PATH}/)${env}(?=/client\.ovpn)"
+    | grep --colour=never -P "${HOME}/\.davinci-env/.*${env}/client\.ovpn"
 }
 
 _ovpn_pid() {
@@ -41,16 +45,22 @@ _ovpn_cmd_reup() {
 }
 
 _ovpn_cmd_ls() {
-  ps -ef \
-    | grep 'openvpn --config' \
-    | grep -v grep \
-    | grep --colour=never -o -P ${grep_flags} "(?<=${DAVINCI_ENV_PATH}/).+(?=/client\.ovpn)"
+  local env="${1:-}"
+  # TODO the path prefix shouldn't be hardcoded, but it is required as of writing due to
+  # the addition of the support of multiple paths in DAVINCI_ENV_PATH
+  #ps -ef \
+    #| grep 'openvpn --config' \
+    #| grep -v grep \
+    #| grep --colour=never -o -P ${grep_flags} "(?<=${DAVINCI_ENV_PATH}/).+(?=/client\.ovpn)"
+  _ovpn_ls "${env}" \
+    | grep -oP '(?<=davinci-env/).+(?=/client)' \
+    | sort
 }
 
-_ovpn_cmd_nls() {
-  local env="${DAVINCI_ENV:?must set davinci-env}"
-  _ovpn_ls "${env}" '-o' | sort
-}
+#_ovpn_cmd_nls() {
+  #local env="${1:-}"
+  #_ovpn_ls "${env}" | sort
+#}
 
 davinci-ovpn() {
   local cmd="${1:?must pass up/down/reup}" ; shift
@@ -61,10 +71,10 @@ davinci-ovpn() {
     env="${env_override}"
   fi
 
-  if [[ -z "${env}" ]]; then
-    echo "must pass env or set DAVINCI_ENV"
-    return 1
-  fi
+  #if [[ -z "${env}" ]]; then
+    #echo "must pass env or set DAVINCI_ENV"
+    #return 1
+  #fi
 
   _ovpn_cmd_"${cmd}" "${env}"
 }

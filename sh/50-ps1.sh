@@ -67,22 +67,6 @@ _ovpn_tb_ps1() {
   fi
 }
 
-_ovpn_native_ps1() {
-  # convert from line-separated to comma-separated
-  local vpns="$(davinci-ovpn-native-ls | awk '{ printf "%s", NR==1?$0:","$0 }')"
-
-  if [[ -n "${vpns}" ]]; then
-    case "$(_lib_current_shell)" in
-      bash)
-        echo "${PROMPT_COLOR_LIGHT_RED}(v:${vpns})${PROMPT_COLOR_RESET}"
-        ;;
-      zsh)
-        echo "%F{red}%S%B(v:${vpns})%b%s%f"
-        ;;
-    esac
-  fi
-}
-
 _git_color_ps1() {
   if test $(git status 2> /dev/null | grep -c :) -eq 0; then
     echo "${PROMPT_COLOR_GREEN}$(__davinci_git_ps1)${PROMPT_COLOR_RESET}"
@@ -126,7 +110,7 @@ _davinci_env_ps1() {
     new_ps1="${new_ps1}${terraform_ws_color}!tf${PROMPT_COLOR_RESET}"
   fi
 
-  if davinci-ovpn-native-ls | grep -q "${DAVINCI_ENV}" ; then
+  if ovpn ls | grep -q "${DAVINCI_ENV}" ; then
      new_ps1="${new_ps1}${vpn_color}v"
   fi
 

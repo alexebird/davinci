@@ -52,9 +52,9 @@ export DAVINCI_PATH="${HOME}/.davinci:${DAVINCI_HOME}/infra/davinci"
 ```bash
 # DAVINCI_ENV_PATH (required)
 # - defaults to "${HOME}/.davinci-env"
-# - Path where virtual-env tooling, such as aws-env, environments live.
 # - Should not be a git repo unless any secrets are encrypted.
-export DAVINCI_ENV_PATH="${HOME}/.cool-co-env"
+# - Paths are sourced in the order they appear in this variable, colon separated.
+export DAVINCI_ENV_PATH="${HOME}/.davinci-env:${HOME}/projects/infra"
 ```
 
 ```bash

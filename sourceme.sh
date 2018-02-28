@@ -30,7 +30,7 @@ _davinci_source_user_dot_davinci() {
 davinci-toolme() {
   _davinci_source_bash
   _davinci_source_user_dot_davinci
-  davincienv::source_sh_files "${DAVINCI_ENV_PATH}/auto"
+  davincienv::source_auto
 }
 
 # config env vars

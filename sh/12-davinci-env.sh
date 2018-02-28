@@ -136,6 +136,14 @@ davincienv::set_env() {
   fi
 }
 
+davincienv::source_auto() {
+  local de_path="${DAVINCI_ENV_PATH}"
+
+  for _path in $(IFS=':'; echo ${de_path} ; unset IFS); do
+    davincienv::source_sh_files "${_path}/auto"
+  done
+}
+
 davinci-davinci-env-unset() {
   if [[ -z "${DAVINCI_ENV}" ]]; then
     # presume already unset, that's fine.

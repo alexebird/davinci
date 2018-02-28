@@ -2,7 +2,6 @@
 
 alias dp='docker ps --format "table {{.ID}}\t{{.Status}}\t{{.Names}}"'
 alias dpp='docker ps --format "table {{.ID}}\t{{.Status}}\t{{.Ports}}\t{{.Names}}"'
-alias wdp="watch -n1 'docker ps --format \"table {{.ID}}\t{{.Status}}\t{{.Names}}\"'"
 alias urlencode='python -c "import urllib, sys; print urllib.quote(sys.argv[1])"'
 alias urldecode='python -c "import urllib, sys; print urllib.unquote(sys.argv[1])"'
 alias n='nomad'

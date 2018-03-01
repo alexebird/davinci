@@ -4,7 +4,7 @@ _ovpn_connect() {
   local env="$1"
   # TODO the path prefix shouldn't be hardcoded, but it is required as of writing due to
   # the addition of the support of multiple paths in DAVINCI_ENV_PATH
-  local conf="${DAVINCI_HOME}/.davinci-env/${env}/client.ovpn"
+  local conf="${HOME}/.davinci-env/${env}/client.ovpn"
 
   if [[ -z "$(_ovpn_pid ${env})" ]]; then
     sudo openvpn --config "${conf}" --daemon

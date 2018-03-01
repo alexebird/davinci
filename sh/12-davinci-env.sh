@@ -91,6 +91,15 @@ davincienv::local_git_env_path() {
   fi
 }
 
+davincienv::davinci_env_path() {
+  local local_git_path="$(davincienv::local_git_env_path)"
+  if echo "${DAVINCI_ENV_PATH}" | grep -q "${local_git_path}"; then
+    echo "${DAVINCI_ENV_PATH}"
+  else
+    echo "${DAVINCI_ENV_PATH}:${local_git_path}"
+  fi
+}
+
 davincienv::print_env() {
   if [[ -n "${DAVINCI_ENV}" ]]; then
     if [[ -n "${DAVINCI_SUBENV}" ]]; then
@@ -140,7 +149,7 @@ davincienv::set_env() {
 }
 
 davincienv::source_auto() {
-  local de_path="${DAVINCI_ENV_PATH}"
+  local de_path="$(davincienv::davinci_env_path)"
 
   for _path in $(echo ${de_path} | sed -e 's/:/\n/g')
   do
@@ -154,7 +163,7 @@ davinci-davinci-env-unset() {
     return 0
   fi
 
-  local de_path="${DAVINCI_ENV_PATH}:$(davincienv::local_git_env_path)"
+  local de_path="$(davincienv::davinci_env_path)"
 
   # use tac to reverse the de_path so that it is unset in the reverse order that it is set.
   for _path in $(echo ${de_path} | sed -e 's/:/\n/g' | tac)
@@ -186,6 +195,7 @@ davinci-davinci-env-unset() {
 davinci-davinci-env() {
   _davinci_help_helper "$@" && return 0
   local new_env="${1:-}" ; shift
+  local new_subenv=''
 
   # support passing a combined env and subenv
   if echo "${new_env}" | grep -qP '^([a-z-]+)-([0-9]+)$'; then
@@ -200,7 +210,7 @@ davinci-davinci-env() {
   fi
 
   # check if new_env exists
-  if ! davincienv::check_for_env "${new_env}" "${DAVINCI_ENV_PATH}:${project_local_env_dir}" ; then
+  if ! davincienv::check_for_env "${new_env}" "$(davincienv::davinci_env_path)" ; then
     return 1
   fi
 
@@ -209,7 +219,7 @@ davinci-davinci-env() {
   davincienv::set_env "${new_env}" "${new_subenv}"
 
   # source the env dirs
-  local de_path="${DAVINCI_ENV_PATH}:$(davincienv::local_git_env_path)"
+  local de_path="$(davincienv::davinci_env_path)"
 
   for _path in $(echo ${de_path} | sed -e 's/:/\n/g')
   do

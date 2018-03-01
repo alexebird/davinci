@@ -54,6 +54,7 @@ davincienv::print_vars() {
 }
 
 davincienv::source_sh_files() {
+
   local path_="$1"
 
   if ! [[ -d "${path_}" ]]; then
@@ -103,11 +104,12 @@ davincienv::print_env() {
   fi
 }
 
+
 davincienv::check_for_env() {
   local env="${1:?must pass env}" ; shift
   local paths="${1:?must pass paths}" ; shift
 
-  for _path in $(IFS=':'; echo ${paths}; unset IFS)
+  for _path in $(echo ${paths} | sed -e 's/:/\n/g')
   do
     if [[ -d "${_path}/${env}" ]]; then
       return 0
@@ -116,7 +118,8 @@ davincienv::check_for_env() {
 
   echo "davinci-env: no env called '${new_env}' found at:"
   echo
-  for _path in $(IFS=':'; echo ${paths}; unset IFS); do
+  for _path in $(echo ${paths} | sed -e 's/:/\n/g')
+  do
     echo "${_path}/${env}"
   done
   return 1
@@ -139,7 +142,8 @@ davincienv::set_env() {
 davincienv::source_auto() {
   local de_path="${DAVINCI_ENV_PATH}"
 
-  for _path in $(IFS=':'; echo ${de_path} ; unset IFS); do
+  for _path in $(echo ${de_path} | sed -e 's/:/\n/g')
+  do
     davincienv::source_sh_files "${_path}/auto"
   done
 }
@@ -153,19 +157,23 @@ davinci-davinci-env-unset() {
   local de_path="${DAVINCI_ENV_PATH}:$(davincienv::local_git_env_path)"
 
   # use tac to reverse the de_path so that it is unset in the reverse order that it is set.
-  for _path in $(IFS=':'; echo ${de_path} | sed -e's/ /\n/g' | tac ; unset IFS); do
+  for _path in $(echo ${de_path} | sed -e 's/:/\n/g' | tac)
+  do
     davincienv::unset_at_path "${_path}/postcommon"
   done
 
-  for _path in $(IFS=':'; echo ${de_path} | sed -e's/ /\n/g' | tac ; unset IFS); do
+  for _path in $(echo ${de_path} | sed -e 's/:/\n/g' | tac)
+  do
     davincienv::unset_at_path "${_path}/${DAVINCI_ENV}/${DAVINCI_SUBENV}"
   done
 
-  for _path in $(IFS=':'; echo ${de_path} | sed -e's/ /\n/g' | tac ; unset IFS); do
+  for _path in $(echo ${de_path} | sed -e 's/:/\n/g' | tac)
+  do
     davincienv::unset_at_path "${_path}/${DAVINCI_ENV}"
   done
 
-  for _path in $(IFS=':'; echo ${de_path} | sed -e's/ /\n/g' | tac ; unset IFS); do
+  for _path in $(echo ${de_path} | sed -e 's/:/\n/g' | tac)
+  do
     davincienv::unset_at_path "${_path}/precommon"
   done
 
@@ -203,19 +211,23 @@ davinci-davinci-env() {
   # source the env dirs
   local de_path="${DAVINCI_ENV_PATH}:$(davincienv::local_git_env_path)"
 
-  for _path in $(IFS=':'; echo ${de_path} ; unset IFS); do
+  for _path in $(echo ${de_path} | sed -e 's/:/\n/g')
+  do
     davincienv::source_sh_files "${_path}/precommon"
   done
 
-  for _path in $(IFS=':'; echo ${de_path} ; unset IFS); do
+  for _path in $(echo ${de_path} | sed -e 's/:/\n/g')
+  do
     davincienv::source_sh_files "${_path}/${new_env}"
   done
 
-  for _path in $(IFS=':'; echo ${de_path} ; unset IFS); do
+  for _path in $(echo ${de_path} | sed -e 's/:/\n/g')
+  do
     davincienv::source_sh_files "${_path}/${new_env}/${new_subenv}"
   done
 
-  for _path in $(IFS=':'; echo ${de_path} ; unset IFS); do
+  for _path in $(echo ${de_path} | sed -e 's/:/\n/g')
+  do
     davincienv::source_sh_files "${_path}/postcommon"
   done
 }

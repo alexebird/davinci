@@ -14,7 +14,6 @@ for repo in $(ls -1trh "${DAVINCI_HOME}"); do
   status="$(git status --porcelain)"
 
   if [[ -z "${main_branch}" ]] || [[ -n "${stash}" ]] || [[ -n "${status}" ]]; then
-  #if [[ -n "${stash}" ]] || [[ -n "${status}" ]]; then
     header="== $(basename "${PWD}") (${PWD}) "
 
     while [[ "${#header}" -le 80 ]]; do

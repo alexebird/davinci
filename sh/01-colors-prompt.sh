@@ -18,7 +18,9 @@ PROMPT_COLOR_CYAN='\[\e[1;36m\]'
 PROMPT_COLOR_RESET='\[\e[0m\]'
 
 # Highlighted
+# bold white on bright red
 PROMPT_COLOR_YELLOW_HL='\[\e[0;30;43m\]'
+PROMPT_COLOR_RED_HL_BLACK='\[\e[0;30;41m\]'
 PROMPT_COLOR_RED_HL='\[\e[1;97;101m\]'
 
 # Blinking

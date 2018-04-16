@@ -284,7 +284,7 @@ HERE
   local cmd
 
   if [[ -n "${desired_regex}" ]]; then
-    for f in $(find "$(gpgp::pub_key_path)" -type f -name '*.pub' | grep -P "${desired_regex}") ; do
+    find "$(gpgp::pub_key_path)" -type f -name '*.pub' | grep -P "${desired_regex}" | while read f ; do
       cmd="${GPG} --import ${f}"
       echo "${cmd}"
       if [[ "${dry_run}" != "true" ]]; then
@@ -455,7 +455,8 @@ gpgp::secrets_reencrypt_dir() {
   echo "files:"
 
   # if it ends with gpg, re-encrypt.
-  for secret in $(find "${dir}" -maxdepth 1 -type f -name '*.gpg') ; do
+  find "${dir}" -maxdepth 1 -type f -name '*.gpg' | while read secret ; do
+    echo "debug gpg=t sec='${secret}'"
     any_secrets='t'
     echo -e "  ${COLOR_YELLOW}~ reencrypting${COLOR_RESET} ${secret}"
 
@@ -472,7 +473,9 @@ gpgp::secrets_reencrypt_dir() {
 
   # if it doesn't end with gpg, just encrypt and delete original.
   # if the file ends with '.cleartext', dont worry about encrypting it.
-  for secret in $(find "${dir}" -maxdepth 1 -name '.git' -prune -o \( -type f -a -not -name '*.gpg' -a -not -name 'gpgp-role:*' \) -print) ; do
+  find "${dir}" -maxdepth 1 -name '.git' -prune -o \( -type f -a -not -name '*.gpg' -a -not -name 'gpgp-role:*' \) -print | while read secret ; do
+    echo "debug gpg=f sec='${secret}'"
+
     any_secrets='t'
 
     if [[ "${secret}" == *.gitignore ]]; then
@@ -677,7 +680,7 @@ gpgp::cmd_reencrypt_dirs() {
   local secrets_path="$1" ; shift
   # reverse sort here so that lower-depth dirs are encrypted first, so that their roles will be
   # applied correctly.
-  for dir in $(find "${secrets_path}" -name '.git' -prune -o -type d -print | sort -r) ; do
+  find "${secrets_path}" -name '.git' -prune -o -type d -print | sort -r | while read dir ; do
     gpgp::secrets_reencrypt_dir "${dir}" "${dry_run}" || return 1
     echo
   done

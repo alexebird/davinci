@@ -33,7 +33,7 @@ COLOR_YELLOW_BL='\e[5;30;43m'
 
 [ -n "${GPGP_VERBOSE:-}" ] && set -x
 
-GPG='gpg2'
+GPG='gpg'
 COPY=''
 
 if [[ "${OSTYPE}" == "linux-gnu" ]] && which xsel > /dev/null; then

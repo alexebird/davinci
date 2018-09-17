@@ -1,8 +1,6 @@
 #!/bin/bash
 #set -x
 
-GPG='gpg2'
-
 _davinci_path_first_component() {
   _davinci_path_components | head -1
 }

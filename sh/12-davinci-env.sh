@@ -2,7 +2,7 @@
 
 # davinci-env: all-encompassing virtual env for infrastructure
 
-GPG='gpg2'
+GPG='gpg'
 
 _help_davinci-env() {
   cat <<HERE

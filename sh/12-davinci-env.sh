@@ -54,7 +54,6 @@ davincienv::print_vars() {
 }
 
 davincienv::source_sh_files() {
-
   local path_="$1"
 
   if ! [[ -d "${path_}" ]]; then
@@ -68,7 +67,9 @@ davincienv::source_sh_files() {
 
   for f in $(find "${path_}" -maxdepth 1 -type f -name '*.sh.gpg' | sort); do
     davincienv::print_vars "${f}"
-    . <(${GPG} --batch=yes --quiet -d "${f}")
+    # doesnt work on MAC
+    #. <(${GPG} --batch=yes --quiet -d "${f}")
+    eval "$(${GPG} --batch=yes --quiet -d "${f}")"
   done
 }
 
@@ -157,12 +158,13 @@ davincienv::source_auto() {
   done
 }
 
-davinci-davinci-env-unset() {
+davinci-env-unset() {
   if [[ -z "${DAVINCI_ENV}" ]]; then
     # presume already unset, that's fine.
     return 0
   fi
 
+  echo unsetting
   local de_path="$(davincienv::davinci_env_path)"
 
   # use tac to reverse the de_path so that it is unset in the reverse order that it is set.
@@ -192,7 +194,7 @@ davinci-davinci-env-unset() {
   unset DAVINCI_ENV
 }
 
-davinci-davinci-env() {
+davinci-env() {
   _davinci_help_helper "$@" && return 0
   local new_env="${1:-}" ; shift
   local new_subenv=''
@@ -215,11 +217,12 @@ davinci-davinci-env() {
   fi
 
   # unset the previous env so that we don't have vars leftover
-  davinci-davinci-env-unset
+  davinci-env-unset
   davincienv::set_env "${new_env}" "${new_subenv}"
 
   # source the env dirs
   local de_path="$(davincienv::davinci_env_path)"
+  echo $de_path
 
   for _path in $(echo ${de_path} | sed -e 's/:/\n/g')
   do

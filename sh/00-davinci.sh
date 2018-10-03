@@ -37,10 +37,3 @@ _davinci_help_helper() {
 _davinci_opt_use_safety_prompt() {
   echo "${DAVINCI_OPTS}" | grep -q 'prompt'
 }
-
-davinci-install-bin() (
-  local program="${1:?must pass program}"
-  program="$(basename "${program}")"
-  cd bin
-  ln -s "../scripts/${program}"
-)

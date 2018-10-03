@@ -54,27 +54,14 @@ __davinci_git_ps1 ()
   fi
 }
 
-_ovpn_tb_ps1() {
-  local vpns="$(davinci-ovpn-tb-ls | awk '{ gsub(/-\w+-\w+-[[:digit:]]+/, ""); printf "%s", NR==1?$0:","$0 }')"
-  if [[ -n "${vpns}" ]]; then
-    case "$(_lib_current_shell)" in
-      bash)
-        echo "${PROMPT_COLOR_LIGHT_RED}(v:${vpns})${PROMPT_COLOR_RESET}"
-        ;;
-      zsh)
-        echo "%F{red}%S%B(v:${vpns})%b%s%f"
-        ;;
-    esac
-  fi
-}
 
-_git_color_ps1() {
-  if test $(\git status --porcelain | wc -l) -eq 0 ; then
-    echo "${PROMPT_COLOR_GREEN}$(__davinci_git_ps1)${PROMPT_COLOR_RESET}"
-  else
-    echo "${PROMPT_COLOR_RED}$(__davinci_git_ps1)${PROMPT_COLOR_RESET}"
-  fi
-}
+#_git_color_ps1() {
+  #if test $(\git status --porcelain | wc -l) -eq 0 ; then
+    #echo "${PROMPT_COLOR_GREEN}$(__davinci_git_ps1)${PROMPT_COLOR_RESET}"
+  #else
+    #echo "${PROMPT_COLOR_RED}$(__davinci_git_ps1)${PROMPT_COLOR_RESET}"
+  #fi
+#}
 
 _davinci_env_ps1() {
   local new_ps1
@@ -82,39 +69,36 @@ _davinci_env_ps1() {
   local env_color="${PROMPT_COLOR_LIGHT_YELLOW}"
   local sensitive_env_color="${PROMPT_COLOR_RED_HL_BLACK}"
   local somewhat_sensitive_env_color="${PROMPT_COLOR_LIGHT_YELLOW}"
-  #local vpn_color="${PROMPT_COLOR_PURPLE}"
-  #local aws_color="${PROMPT_COLOR_YELLOW}"
-  #local do_color="${PROMPT_COLOR_BLUE}"
-  #local terraform_ws_color="${PROMPT_COLOR_RED_HL}"
 
   # empty prompt section if env isnt set
-  if [[ -z "${DAVINCI_ENV}" ]] ; then
-    #if [[ "$(ps -ef | grep 'openvpn --config' | grep -v grep | wc -l)" != "0" ]]; then
-      #echo "${parens_color}(${vpn_color}v${parens_color})${PROMPT_COLOR_RESET}"
-    #else
-      #echo
-    #fi
+  #if [[ -z "${DAVINCI_ENV}" ]] ; then
+    #echo
+    #return 0
+  #fi
+
+  #if [[ "${DAVINCI_ENV}" == "prod" ]] ; then
+    #new_ps1="${sensitive_env_color}${DAVINCI_ENV_FULL}${PROMPT_COLOR_RESET}"
+  #elif [[ "${DAVINCI_ENV}" == "dev" ]] ; then
+    #new_ps1="${somewhat_sensitive_env_color}${DAVINCI_ENV_FULL}${PROMPT_COLOR_RESET}"
+  #else
+    #new_ps1="${env_color}${DAVINCI_ENV_FULL}"
+  #fi
+
+  # empty prompt section if env isnt set
+  local env="${AWS_ACCOUNT_NAME}"
+
+  if [[ -z "${env}" ]] ; then
     echo
     return 0
   fi
 
-  if [[ "${DAVINCI_ENV}" == "prod" ]] ; then
-    new_ps1="${sensitive_env_color}${DAVINCI_ENV_FULL}${PROMPT_COLOR_RESET}"
-  elif [[ "${DAVINCI_ENV}" == "dev" ]] ; then
-    new_ps1="${somewhat_sensitive_env_color}${DAVINCI_ENV_FULL}${PROMPT_COLOR_RESET}"
+  if [[ "${env}" == "production" ]] || [[ "${env}" == "corporate" ]]; then
+    new_ps1="${sensitive_env_color}${env}${PROMPT_COLOR_RESET}"
+  #elif [[ "${env}" == "dev" ]] ; then
+    #new_ps1="${somewhat_sensitive_env_color}${env}${PROMPT_COLOR_RESET}"
   else
-    new_ps1="${env_color}${DAVINCI_ENV_FULL}"
+    new_ps1="${env_color}${env}"
   fi
-
-  #local tf_ws="$(\terraform workspace show)"
-
-  #if [[ "${PWD}" == *terraform* ]] && [[ "${DAVINCI_ENV_FULL}" != "${tf_ws}" ]]; then
-    #new_ps1="${new_ps1}${terraform_ws_color}!tf${PROMPT_COLOR_RESET}"
-  #fi
-
-  #if davinci-ovpn ls | grep -q "${DAVINCI_ENV}" ; then
-     #new_ps1="${new_ps1}${vpn_color}v"
-  #fi
 
   echo "${parens_color}(${new_ps1}${parens_color})${PROMPT_COLOR_RESET}"
 }

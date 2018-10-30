@@ -6,8 +6,8 @@ set -euo pipefail
 div="----------------------------------------------------------------------------"
 first='true'
 
-for repo in $(ls -1trh "${DAVINCI_HOME}"); do
-  cd "${DAVINCI_HOME}/${repo}"
+for repo in $(find "${DAVINCI_HOME}" -type d -name .git); do
+  cd "${repo%.git}"
 
   main_branch="$(git branch | grep '*' | grep -P 'dev|develop|master' || true)"
   stash="$(git stash list)"

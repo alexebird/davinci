@@ -54,14 +54,13 @@ __davinci_git_ps1 ()
   fi
 }
 
-
-#_git_color_ps1() {
-  #if test $(\git status --porcelain | wc -l) -eq 0 ; then
-    #echo "${PROMPT_COLOR_GREEN}$(__davinci_git_ps1)${PROMPT_COLOR_RESET}"
-  #else
-    #echo "${PROMPT_COLOR_RED}$(__davinci_git_ps1)${PROMPT_COLOR_RESET}"
-  #fi
-#}
+_git_color_ps1() {
+  if test $(\git status --porcelain | wc -l) -eq 0 ; then
+    echo "${PROMPT_COLOR_GREEN}$(__davinci_git_ps1)${PROMPT_COLOR_RESET}"
+  else
+    echo "${PROMPT_COLOR_RED}$(__davinci_git_ps1)${PROMPT_COLOR_RESET}"
+  fi
+}
 
 _davinci_env_ps1() {
   local new_ps1

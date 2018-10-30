@@ -218,6 +218,8 @@ davinci-env() {
 
   # unset the previous env so that we don't have vars leftover
   davinci-env-unset
+  echo
+  echo "setting to ${new_env}"
   davincienv::set_env "${new_env}" "${new_subenv}"
 
   # source the env dirs

@@ -1,0 +1,31 @@
+---
+prompt:
+  options:
+    colors:
+      sensitivity:
+        high: red_hl_black
+        medium: yellow
+        low: none
+
+  davinci_env:                    # human name for mutually-exclusive grouping of rules
+    - env_vars: ['DAVINCI_ENV']     # check these env vars for the pattern
+      pattern: 'prod|production'    # check for these patterns
+      sensitivity: 'high'           # color with these
+
+    - env_vars: ['DAVINCI_ENV']
+      pattern: 'stage|staging'
+      sensitivity: 'medium'
+
+    - env_vars: ['DAVINCI_ENV']
+      pattern: 'dev|development'
+      sensitivity: 'low'
+
+  assume_role:
+    - env_vars: ['AWS_ACCOUNT_NAME', 'AWS_ACCOUNT_ROLE']
+      pattern: 'development'
+      sensitivity: 'low'
+      shorten: 'dev'
+    - env_vars: ['AWS_ACCOUNT_NAME', 'AWS_ACCOUNT_ROLE']
+      pattern: 'production|corporate'
+      sensitivity: 'high'
+      shorten: 'prod'

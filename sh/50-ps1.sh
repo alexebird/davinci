@@ -3,8 +3,7 @@
 # stolen from git itself
 __davinci_git_ps1 ()
 {
-  #local g="$(\git rev-parse --git-dir 2>/dev/null)"
-  local g=".git"
+  local g="$(\git rev-parse --git-dir 2>/dev/null)"
   if [ -n "$g" ]; then
     local r
     local b
@@ -63,41 +62,35 @@ _git_color_ps1() {
 }
 
 _davinci_env_ps1() {
-  local new_ps1
   local parens_color="${PROMPT_COLOR_LIGHT_GREEN}"
+  local new_ps1="$(_coinbase_assume_role)"
+  if [[ -n "${new_ps1}" ]]; then
+    echo "${parens_color}(${new_ps1}${parens_color})${PROMPT_COLOR_RESET}"
+  else
+    echo
+  fi
+}
+
+_davinci_env_ps1_custom_fn_names() {
+}
+
+_davinci_ps1(){
+  local new_ps1
   local env_color="${PROMPT_COLOR_LIGHT_YELLOW}"
   local sensitive_env_color="${PROMPT_COLOR_RED_HL_BLACK}"
   local somewhat_sensitive_env_color="${PROMPT_COLOR_LIGHT_YELLOW}"
 
   # empty prompt section if env isnt set
-  #if [[ -z "${DAVINCI_ENV}" ]] ; then
-    #echo
-    #return 0
-  #fi
-
-  #if [[ "${DAVINCI_ENV}" == "prod" ]] ; then
-    #new_ps1="${sensitive_env_color}${DAVINCI_ENV_FULL}${PROMPT_COLOR_RESET}"
-  #elif [[ "${DAVINCI_ENV}" == "dev" ]] ; then
-    #new_ps1="${somewhat_sensitive_env_color}${DAVINCI_ENV_FULL}${PROMPT_COLOR_RESET}"
-  #else
-    #new_ps1="${env_color}${DAVINCI_ENV_FULL}"
-  #fi
-
-  # empty prompt section if env isnt set
-  local env="${AWS_ACCOUNT_NAME}"
-
-  if [[ -z "${env}" ]] ; then
+  if [[ -z "${DAVINCI_ENV}" ]] ; then
     echo
     return 0
   fi
 
-  if [[ "${env}" == "production" ]] || [[ "${env}" == "corporate" ]]; then
-    new_ps1="${sensitive_env_color}${env}${PROMPT_COLOR_RESET}"
-  #elif [[ "${env}" == "dev" ]] ; then
-    #new_ps1="${somewhat_sensitive_env_color}${env}${PROMPT_COLOR_RESET}"
+  if [[ "${DAVINCI_ENV}" == "prod" ]] ; then
+    new_ps1="${sensitive_env_color}${DAVINCI_ENV_FULL}${PROMPT_COLOR_RESET}"
+  elif [[ "${DAVINCI_ENV}" == "dev" ]] ; then
+    new_ps1="${somewhat_sensitive_env_color}${DAVINCI_ENV_FULL}${PROMPT_COLOR_RESET}"
   else
-    new_ps1="${env_color}${env}"
+    new_ps1="${env_color}${DAVINCI_ENV_FULL}"
   fi
-
-  echo "${parens_color}(${new_ps1}${parens_color})${PROMPT_COLOR_RESET}"
 }

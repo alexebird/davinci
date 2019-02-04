@@ -4,13 +4,13 @@ import (
 //"fmt"
 )
 
-//type Env {
-//name string
-//}
-
-func Set(newEnv string) {
-
+type Env struct {
+	paths []string
 }
+
+//func (e *Env) Search() []string {
+
+//}
 
 //func Clear() string {
 

@@ -72,6 +72,8 @@ _davinci_env_ps1() {
 }
 
 _davinci_env_ps1_custom_fn_names() {
+  # TODO
+  declare -F
 }
 
 _davinci_ps1(){

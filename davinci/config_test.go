@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestLoad_path_exists(t *testing.T) {
+func TestLoadConfig_path_exists(t *testing.T) {
 	var data = `
 ---
 options:
@@ -14,7 +14,7 @@ options:
     - './testdata'
 `
 
-	config, err := davinci.Load(data)
+	config, err := davinci.LoadConfig(data)
 	if err != nil {
 		t.Fail()
 	}
@@ -24,7 +24,7 @@ options:
 	}
 }
 
-func TestLoad_path_non_exists(t *testing.T) {
+func TestLoadConfig_path_non_exists(t *testing.T) {
 	var data = `
 ---
 options:
@@ -32,7 +32,7 @@ options:
     - './foobar'
 `
 
-	_, err := davinci.Load(data)
+	_, err := davinci.LoadConfig(data)
 	if err == nil {
 		t.Fail()
 	}

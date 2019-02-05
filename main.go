@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
+	"github.com/alexebird/davinci/davinci"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/urfave/cli"
 )
 
@@ -16,9 +17,21 @@ func main() {
 
 	app.Commands = []cli.Command{
 		{
-			Name: "set",
+			Name: "search",
 			Action: func(c *cli.Context) error {
-				fmt.Println("set")
+				fmt.Println("search")
+				d, err := davinci.CreateSession("/Users/alexbird/.davinci.yml")
+				if err != nil {
+					return err
+				}
+
+				foundTerms, err := d.Search(c.Args())
+				if err != nil {
+					return err
+				}
+
+				spew.Dump(foundTerms)
+
 				return nil
 			},
 		},
@@ -32,6 +45,6 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }

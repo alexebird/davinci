@@ -1,11 +1,11 @@
 #!/bin/bash
 
 _lib_git_assert_in_repo() {
-  git rev-parse --show-toplevel > /dev/null 2>&1
+  \git rev-parse --show-toplevel > /dev/null 2>&1
 }
 
 _lib_git_top_level() {
-  git rev-parse --show-toplevel
+  \git rev-parse --show-toplevel
 }
 
 _lib_current_shell() {

@@ -1,14 +1,20 @@
 #!/bin/bash
 #set -x
 
-GPG='gpg2'
-
 _davinci_path_first_component() {
   _davinci_path_components | head -1
 }
 
 _davinci_path_components() {
   echo "${DAVINCI_PATH}" | sed -e's/:/\n/'
+}
+
+_davinci_source_davinci_path_components() {
+  for path_ in $(_davinci_path_components); do
+    if [[ -d "${path_}/bin" ]]; then
+        export PATH="${path_}/bin:${PATH}"
+    fi
+  done
 }
 
 _davinci_source_bash() {
@@ -28,9 +34,10 @@ _davinci_source_user_dot_davinci() {
 }
 
 davinci-toolme() {
+  _davinci_source_davinci_path_components
   _davinci_source_bash
   _davinci_source_user_dot_davinci
-  davincienv::source_auto
+  #davincienv::source_auto
 }
 
 # config env vars
@@ -48,23 +55,10 @@ davinci-toolme() {
 
 [ -z "${DAVINCI_OPTS}" ] && export DAVINCI_OPTS=''
 
-# gpgp
-[ -z "${GPGP_PATH}" ]                 && export GPGP_PATH="$(_davinci_path_first_component)"
-[ -z "${GPGP_EMAIL_DOMAINS}" ]        && export GPGP_EMAIL_DOMAINS=''
-[ -z "${GPGP_PUB_KEY_ID_BLACKLIST}" ] && export GPGP_PUB_KEY_ID_BLACKLIST=''
-[ -z "${GPGP_SECRETS_PATH}" ]         && export GPGP_SECRETS_PATH="${DAVINCI_HOME}/secrets"
-
 # /end config env vars
 # ====================
 
 export PATH="${DAVINCI_CLONE}/bin:${PATH}"
-
-for path_ in $(_davinci_path_components); do
-  if [[ -d "${path_}/bin" ]]; then
-      export PATH="${path_}/bin:${PATH}"
-  fi
-done
-
 export MANPATH="${DAVINCI_CLONE}/man:${MANPATH}"
 
 davinci-toolme

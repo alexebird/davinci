@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -192,7 +194,7 @@ func (u Unit) listFiles() []string {
 }
 
 func isValidFile(name string) bool {
-	if strings.HasSuffix(name, ".sh") || strings.HasSuffix(name, ".gpg") {
+	if strings.HasSuffix(name, ".sh") || strings.HasSuffix(name, ".gpg") || strings.HasSuffix(name, ".asc") {
 		return true
 	}
 
@@ -275,25 +277,69 @@ func expandPath(pth string) string {
 
 func readFilesForEval(files []string) (string, error) {
 	var err error
-	var data []byte
-	var file *os.File
+	var data string
 	var evalBuf strings.Builder
 	for i := 3; i >= 1; i-- {
 	}
 
 	for _, fname := range files {
-		file, err = os.Open(fname)
-		if err != nil {
-			return "", err
+		if filepath.Ext(fname) == ".sh" {
+			data, err = readCleartextFile(fname)
+			if err != nil {
+				return "", err
+			}
+			fmt.Fprintf(&evalBuf, "%s", data)
+		} else if filepath.Ext(fname) == ".gpg" || filepath.Ext(fname) == ".asc" {
+			data, err = readGPGEncryptedFile(fname)
+			if err != nil {
+				return "", err
+			}
+			fmt.Fprintf(&evalBuf, "%s", data)
 		}
-		defer file.Close()
-
-		fmt.Fprintf(&evalBuf, "# %s\n", fname)
-		data, err = ioutil.ReadAll(file)
-		fmt.Fprintf(&evalBuf, "%s\n", data)
 	}
 
 	return evalBuf.String(), nil
+}
+
+func readCleartextFile(fname string) (string, error) {
+	var s strings.Builder
+	var data []byte
+	var file *os.File
+	var err error
+
+	file, err = os.Open(fname)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	fmt.Fprintf(&s, "# %s\n", fname)
+	data, err = ioutil.ReadAll(file)
+	fmt.Fprintf(&s, "%s\n", data)
+
+	return s.String(), nil
+}
+
+func readGPGEncryptedFile(fname string) (string, error) {
+	var s strings.Builder
+	var cmd exec.Cmd
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	cmd.Path = "/usr/local/bin/gpg"
+	cmd.Args = []string{"--decrypt", "--output", "-", fname}
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		log.Fatalf("gpg decrypt error encountered by davinci\nout\n%s\nerr\n%s", stdout.String(), stderr.String())
+		return "", err
+	}
+
+	fmt.Fprintf(&s, "# %s\n", fname)
+	fmt.Fprintf(&s, "%s\n", stdout.String())
+
+	return s.String(), nil
 }
 
 // print the colorized shell prompt based on the config.

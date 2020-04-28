@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -10,8 +11,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
-	"github.com/urfave/cli"
+	_ "github.com/davecgh/go-spew/spew"
+	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v2"
 )
 
@@ -49,30 +50,53 @@ type Session struct {
 }
 
 func main() {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+
 	app := cli.NewApp()
 	app.Name = "davinci"
 	app.Usage = "manage env var sourcing"
 	app.Version = "0.0.1"
-	spew.Dump("S.P.E.W.")
+	//spew.Dump("S.P.E.W.")
 
-	app.Commands = []cli.Command{
+	app.Flags = []cli.Flag{
+		&cli.StringFlag{
+			Name:    "config",
+			Aliases: []string{"c"},
+			Usage:   "config file path. default: $HOME/.davinci.yml",
+			Value:   path.Join(home, ".davinci.yml"),
+		},
+	}
+
+	app.Commands = []*cli.Command{
 		{
 			Name: "search",
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:    "eval",
+					Aliases: []string{"e"},
+					Usage:   "print file contents for eval",
+					Value:   false,
+				},
+			},
 			Action: func(c *cli.Context) error {
-				//fmt.Println("search")
-				d, err := CreateSession("/Users/alexbird/.davinci.yml")
+				d, err := CreateSession(c.String("config"))
 				if err != nil {
 					return err
 				}
 
-				foundTerms, err := d.Search(c.Args())
+				evalPaths, err := d.Search(c.Args().Slice())
 				if err != nil {
 					return err
 				}
 
-				for _, unit := range foundTerms {
-					fmt.Println(unit)
+				evalCode, err := readFilesForEval(evalPaths)
+				if err != nil {
+					log.Fatalf("error: %v", err)
 				}
+				fmt.Print(evalCode)
 
 				return nil
 			},
@@ -85,7 +109,7 @@ func main() {
 		//},
 	}
 
-	err := app.Run(os.Args)
+	err = app.Run(os.Args)
 	if err != nil {
 		panic(err)
 	}
@@ -247,6 +271,29 @@ func expandPath(pth string) string {
 	})
 
 	return res
+}
+
+func readFilesForEval(files []string) (string, error) {
+	var err error
+	var data []byte
+	var file *os.File
+	var evalBuf strings.Builder
+	for i := 3; i >= 1; i-- {
+	}
+
+	for _, fname := range files {
+		file, err = os.Open(fname)
+		if err != nil {
+			return "", err
+		}
+		defer file.Close()
+
+		fmt.Fprintf(&evalBuf, "# %s\n", fname)
+		data, err = ioutil.ReadAll(file)
+		fmt.Fprintf(&evalBuf, "%s\n", data)
+	}
+
+	return evalBuf.String(), nil
 }
 
 // print the colorized shell prompt based on the config.
